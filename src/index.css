@@ -1159,6 +1159,58 @@ body::before {
   50%      { opacity: 1; }
 }
 
+/* ── Shuffle phase ── */
+.pof-shuffle-wrap {
+  position: relative;
+  width: 240px;
+  height: 360px;
+}
+
+.pof-shuffle-card {
+  position: absolute;
+  inset: 0;
+}
+
+/* card backs used inside shuffle */
+.pof-shuffle-card .pof-card-back {
+  width: 100%;
+  height: 100%;
+}
+
+/* pack sits on top during shuffle */
+.pof-pack-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
+.pof-shuffle-0 { animation: shuffleCard0 1.1s cubic-bezier(0.4,0,0.2,1) forwards; z-index: 3; }
+.pof-shuffle-1 { animation: shuffleCard1 1.1s cubic-bezier(0.4,0,0.2,1) 0.04s forwards; z-index: 2; }
+.pof-shuffle-2 { animation: shuffleCard2 1.1s cubic-bezier(0.4,0,0.2,1) 0.08s forwards; z-index: 1; }
+
+@keyframes shuffleCard0 {
+  0%   { transform: none; }
+  25%  { transform: translateX(-58px) translateY(-18px) rotate(-14deg); }
+  55%  { transform: translateX(-62px) translateY(-14px) rotate(-13deg); }
+  80%  { transform: translateX(-20px) translateY(-5px) rotate(-4deg); }
+  100% { transform: none; }
+}
+@keyframes shuffleCard1 {
+  0%   { transform: none; }
+  25%  { transform: translateY(-28px) rotate(1deg); }
+  55%  { transform: translateY(-24px) rotate(-1deg); }
+  80%  { transform: translateY(-8px) rotate(0deg); }
+  100% { transform: none; }
+}
+@keyframes shuffleCard2 {
+  0%   { transform: none; }
+  25%  { transform: translateX(58px) translateY(-18px) rotate(14deg); }
+  55%  { transform: translateX(62px) translateY(-14px) rotate(13deg); }
+  80%  { transform: translateX(20px) translateY(-5px) rotate(4deg); }
+  100% { transform: none; }
+}
+
 /* ── Tearing ── */
 .pof-tear-stage {
   position: relative;
@@ -1274,6 +1326,35 @@ body::before {
 @keyframes slideInLeft {
   from { transform: translateX(-120%) rotate(-8deg); opacity: 0.4; }
   to   { transform: none; opacity: 1; }
+}
+
+/* ── Exiting card animations ── */
+.pof-exit-card {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Card sinks into the ghost stack when going forward */
+.pof-exit-to-back {
+  animation: exitToBack 0.4s cubic-bezier(0.4,0,0.8,1) forwards;
+}
+
+@keyframes exitToBack {
+  0%   { transform: none; opacity: 1; }
+  60%  { transform: translateX(10px) translateY(8px) rotate(2deg) scale(0.93); opacity: 0.7; }
+  100% { transform: translateX(16px) translateY(16px) rotate(4deg) scale(0.86); opacity: 0; }
+}
+
+/* Card slides off to the right when going back */
+.pof-exit-off-right {
+  animation: exitOffRight 0.32s ease-in forwards;
+}
+
+@keyframes exitOffRight {
+  0%   { transform: none; opacity: 1; }
+  100% { transform: translateX(115%) rotate(7deg); opacity: 0.2; }
 }
 
 /* nav row */
