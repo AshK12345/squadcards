@@ -15,7 +15,7 @@ async function callClaude(prompt, maxTokens = 500) {
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: maxTokens,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -26,7 +26,7 @@ async function callClaude(prompt, maxTokens = 500) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: maxTokens,
         messages: [{ role: 'user', content: prompt }],
       }),
