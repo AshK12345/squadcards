@@ -29,6 +29,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
 
   const handleSave = () => {
     onSave(cardData);
+    handleReset();
   };
 
   const handleReset = () => {
@@ -83,6 +84,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
               onStatChange={handleStatChange}
               name={name}
               type={type}
+              photoSrc={photoSrc}
               showToast={showToast}
             />
           </div>
@@ -103,6 +105,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
                 type={type}
                 rarity={rarity}
                 stats={stats}
+                photoSrc={photoSrc}
                 onSelect={setFlavor}
               />
             </div>

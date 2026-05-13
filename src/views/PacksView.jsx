@@ -3,6 +3,7 @@ import { MIN_PACK } from '../constants';
 import PackOpenFlow from '../components/PackOpenFlow';
 import SendModal from '../components/SendModal';
 import { createShareablePack } from '../utils/share';
+import { drawFromPool } from '../utils/pack';
 
 export default function PacksView({
   active,
@@ -15,7 +16,7 @@ export default function PacksView({
   showToast,
 }) {
   const [packName, setPackName]   = useState('The Squad Pack');
-  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [packSize, setPackSize]   = useState(5);
   const [showOverlay, setShowOverlay] = useState(false);
   const [showSend, setShowSend]   = useState(false);
   const [sealing, setSealing]     = useState(false);
@@ -28,21 +29,13 @@ export default function PacksView({
     }
   }, [incomingPack, active]);
 
-  const toggleCard = (id) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
   const buildPack = async () => {
-    if (selectedIds.size < MIN_PACK) {
-      showToast(`Need at least ${MIN_PACK} cards!`);
+    if (collection.length < MIN_PACK) {
+      showToast(`Need at least ${MIN_PACK} cards in your collection!`);
       return;
     }
     setSealing(true);
-    const cards = collection.filter(c => selectedIds.has(c.id));
+    const cards = drawFromPool(collection, packSize);
     const name  = packName || 'Mystery Pack';
 
     const { url } = await createShareablePack(cards, name, deviceId);
@@ -59,7 +52,6 @@ export default function PacksView({
     }
   };
 
-  const selectedCount = selectedIds.size;
   const displayName   = currentPack?.name?.toUpperCase() ?? 'PACK';
   const displayCount  = currentPack?.cards?.length ?? 0;
 
@@ -81,7 +73,32 @@ export default function PacksView({
             />
           </div>
 
-          <label className="form-label">Pick cards (min {MIN_PACK})</label>
+          <div className="form-row">
+            <label className="form-label">Pack Size</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[3, 5, 7, 10].map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPackSize(n)}
+                  style={{
+                    padding: '6px 16px',
+                    fontFamily: 'inherit',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    border: '2px solid #1a1a1a',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: packSize === n ? '#1a1a1a' : '#fff',
+                    color: packSize === n ? '#fff' : '#1a1a1a',
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {collection.length === 0 ? (
             <div className="pack-card-select">
               <span style={{ fontSize: 12, color: '#bbb', fontWeight: 700 }}>
@@ -89,22 +106,10 @@ export default function PacksView({
               </span>
             </div>
           ) : (
-            <div className="pack-card-select">
-              {collection.map(card => (
-                <div
-                  key={card.id}
-                  className={`pack-card-chip ${selectedIds.has(card.id) ? 'selected' : ''}`}
-                  onClick={() => toggleCard(card.id)}
-                >
-                  {card.name}
-                </div>
-              ))}
+            <div className="pack-min-note">
+              {collection.length} card{collection.length !== 1 ? 's' : ''} in pool · rarity-weighted draw ✦
             </div>
           )}
-
-          <div className={`pack-min-note ${selectedCount > 0 && selectedCount < MIN_PACK ? 'warn' : ''}`}>
-            {selectedCount} / {MIN_PACK} selected{selectedCount >= MIN_PACK ? ' ✓' : ''}
-          </div>
 
           <button
             className="btn btn-primary"

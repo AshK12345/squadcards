@@ -1,7 +1,35 @@
 import { fmtBi } from '../constants';
 
-async function callClaude(prompt, maxTokens = 500) {
+// Build a Claude message content array, optionally including an image
+function buildContent(prompt, photoSrc) {
+  if (!photoSrc) return prompt;
+
+  // photoSrc is either a data URL (data:image/...;base64,...) or a remote URL
+  if (photoSrc.startsWith('data:')) {
+    const [header, data] = photoSrc.split(',');
+    const mediaType = header.match(/data:(image\/[^;]+)/)?.[1] ?? 'image/jpeg';
+    return [
+      {
+        type: 'image',
+        source: { type: 'base64', media_type: mediaType, data },
+      },
+      { type: 'text', text: prompt },
+    ];
+  }
+
+  // Remote URL (Supabase public URL after upload)
+  return [
+    {
+      type: 'image',
+      source: { type: 'url', url: photoSrc },
+    },
+    { type: 'text', text: prompt },
+  ];
+}
+
+async function callClaude(prompt, maxTokens = 500, photoSrc = null) {
   const localKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  const content = buildContent(prompt, photoSrc);
   let resp;
 
   if (localKey) {
@@ -17,7 +45,7 @@ async function callClaude(prompt, maxTokens = 500) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: maxTokens,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content }],
       }),
     });
   } else {
@@ -28,7 +56,7 @@ async function callClaude(prompt, maxTokens = 500) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: maxTokens,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content }],
       }),
     });
   }
@@ -41,18 +69,24 @@ async function callClaude(prompt, maxTokens = 500) {
   return data.content.map(i => i.text || '').join('');
 }
 
-export async function evaluateStats(name, type) {
-  const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\nPerson: "${name}" — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE −999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE −999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nRespond ONLY with JSON, no markdown: {"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
-  const text = await callClaude(prompt, 200);
+export async function evaluateStats(name, type, photoSrc = null) {
+  const photoLine = photoSrc
+    ? 'An uploaded photo of this person is also attached — use visual cues (expression, style, energy) to influence the stats.\n\n'
+    : '';
+  const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\n${photoLine}Person: "${name}" — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE −999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE −999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nRespond ONLY with JSON, no markdown: {"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
+  const text = await callClaude(prompt, 200, photoSrc);
   return JSON.parse(text.replace(/```json|```/g, '').trim());
 }
 
-export async function suggestFlavor(name, type, rarity, stats) {
+export async function suggestFlavor(name, type, rarity, stats, photoSrc = null) {
   const statsStr = stats
     .map(s => `${s.name}: ${s.bipolar ? fmtBi(s.val) : s.val}`)
     .join(', ');
-  const prompt = `TCG card flavor text for a friend. 2 sentences max, under 30 words. Light roast, not mean. Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}. Return ONLY a JSON array of 4 strings, no markdown.`;
-  const text = await callClaude(prompt, 500);
+  const photoLine = photoSrc
+    ? ' A photo of this person is attached — let it inspire the flavor text.'
+    : '';
+  const prompt = `TCG card flavor text for a friend. 2 sentences max, under 30 words. Light roast, not mean.${photoLine} Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}. Return ONLY a JSON array of 4 strings, no markdown.`;
+  const text = await callClaude(prompt, 500, photoSrc);
   const cleaned = text.replace(/```json|```/g, '').trim();
   try {
     return JSON.parse(cleaned);

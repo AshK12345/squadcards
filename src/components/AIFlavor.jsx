@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { suggestFlavor } from '../utils/ai';
 
-export default function AIFlavor({ name, type, rarity, stats, onSelect }) {
+export default function AIFlavor({ name, type, rarity, stats, photoSrc, onSelect }) {
   const [loading, setLoading] = useState(false);
   const [chips, setChips] = useState([]);
   const [error, setError] = useState(false);
@@ -11,7 +11,7 @@ export default function AIFlavor({ name, type, rarity, stats, onSelect }) {
     setChips([]);
     setError(false);
     try {
-      const suggestions = await suggestFlavor(name || 'your friend', type || '', rarity, stats);
+      const suggestions = await suggestFlavor(name || 'your friend', type || '', rarity, stats, photoSrc);
       setChips(suggestions);
     } catch {
       setError(true);

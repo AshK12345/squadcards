@@ -3,7 +3,7 @@ import BipolarSlider from './BipolarSlider';
 import { fmtBi } from '../constants';
 import { evaluateStats } from '../utils/ai';
 
-export default function StatsSection({ stats, onStatChange, name, type, showToast }) {
+export default function StatsSection({ stats, onStatChange, name, type, photoSrc, showToast }) {
   const [loading, setLoading] = useState(false);
 
   const handleAIEval = async () => {
@@ -13,7 +13,7 @@ export default function StatsSection({ stats, onStatChange, name, type, showToas
     }
     setLoading(true);
     try {
-      const scores = await evaluateStats(name || '', type || '');
+      const scores = await evaluateStats(name || '', type || '', photoSrc);
       const clamp = (v, mn, mx) => Math.min(mx, Math.max(mn, Math.round(v) || 0));
       const newVals = {
         rizz: clamp(scores.rizz, -999, 999),
