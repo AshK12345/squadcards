@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { suggestFlavor } from '../utils/ai';
+import { getMemory, saveFlavor } from '../utils/aiMemory';
 
-export default function AIFlavor({ name, type, rarity, stats, photoSrc, onSelect }) {
+export default function AIFlavor({ name, type, rarity, stats, photoSrc, collection, onSelect }) {
   const [loading, setLoading] = useState(false);
   const [chips, setChips] = useState([]);
   const [error, setError] = useState(false);
@@ -11,7 +12,8 @@ export default function AIFlavor({ name, type, rarity, stats, photoSrc, onSelect
     setChips([]);
     setError(false);
     try {
-      const suggestions = await suggestFlavor(name || 'your friend', type || '', rarity, stats, photoSrc);
+      const memory = getMemory(name);
+      const suggestions = await suggestFlavor(name || 'your friend', type || '', rarity, stats, photoSrc, collection || [], memory);
       setChips(suggestions);
     } catch {
       setError(true);
@@ -47,7 +49,7 @@ export default function AIFlavor({ name, type, rarity, stats, photoSrc, onSelect
             <div
               key={i}
               className="ai-chip"
-              onClick={() => onSelect(text)}
+              onClick={() => { saveFlavor(name, text); onSelect(text); }}
             >
               {text}
             </div>

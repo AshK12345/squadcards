@@ -52,6 +52,7 @@ export default function App() {
           active={activeView === 'collection'}
           collection={cards}
           loading={loading}
+          onRemove={removeCard}
         />
         <PacksView
           active={activeView === 'packs'}

@@ -609,6 +609,36 @@ body::before {
 .collection-empty { text-align: center; padding: 60px 20px; color: #bbb; }
 .collection-empty p { font-size: 14px; font-weight: 700; margin-top: 10px; }
 
+.card-grid-item {
+  position: relative;
+}
+.card-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2.5px solid #1a1a1a;
+  background: #fff;
+  color: #1a1a1a;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  z-index: 10;
+  padding: 0;
+}
+.card-grid-item:hover .card-delete-btn { opacity: 1; }
+.card-delete-btn:hover { background: #ff3b3b; color: #fff; border-color: #ff3b3b; }
+/* Always visible on touch devices */
+@media (hover: none) { .card-delete-btn { opacity: 1; } }
+
 /* ─── PACKS ─── */
 .pack-area {
   display: flex;

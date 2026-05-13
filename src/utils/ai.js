@@ -69,23 +69,41 @@ async function callClaude(prompt, maxTokens = 500, photoSrc = null) {
   return data.content.map(i => i.text || '').join('');
 }
 
-export async function evaluateStats(name, type, photoSrc = null) {
+// Format a brief squad context line from other cards in the collection
+function buildSquadContext(collection = [], currentName = '') {
+  const others = collection
+    .filter(c => c.name?.toLowerCase() !== currentName?.toLowerCase())
+    .slice(-10);
+  if (others.length === 0) return '';
+  const list = others.map(c => `${c.name}${c.type ? ` (${c.type})` : ''}`).join(', ');
+  return `Other people already in this squad: ${list}. Feel free to reference dynamics, rivalries, or connections between squad members.\n\n`;
+}
+
+export async function evaluateStats(name, type, photoSrc = null, collection = [], memory = null) {
   const photoLine = photoSrc
     ? 'An uploaded photo of this person is also attached — use visual cues (expression, style, energy) to influence the stats.\n\n'
     : '';
-  const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\n${photoLine}Person: "${name}" — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE −999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE −999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nRespond ONLY with JSON, no markdown: {"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
+  const squadContext = buildSquadContext(collection, name);
+  const memoryLine = memory?.stats
+    ? `Previously established stats for ${name}: rizz ${memory.stats.rizz}, aura ${memory.stats.aura}, clout ${memory.stats.clout}, chuddness ${memory.stats.chuddness}. Maintain this character unless there's a clear reason to evolve them.\n\n`
+    : '';
+  const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\n${photoLine}${squadContext}${memoryLine}Person: "${name}" — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE −999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE −999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nRespond ONLY with JSON, no markdown: {"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
   const text = await callClaude(prompt, 200, photoSrc);
   return JSON.parse(text.replace(/```json|```/g, '').trim());
 }
 
-export async function suggestFlavor(name, type, rarity, stats, photoSrc = null) {
+export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, collection = [], memory = null) {
   const statsStr = stats
     .map(s => `${s.name}: ${s.bipolar ? fmtBi(s.val) : s.val}`)
     .join(', ');
   const photoLine = photoSrc
     ? ' A photo of this person is attached — let it inspire the flavor text.'
     : '';
-  const prompt = `TCG card flavor text for a friend. 2 sentences max, under 30 words. Light roast, not mean.${photoLine} Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}. Return ONLY a JSON array of 4 strings, no markdown.`;
+  const squadContext = buildSquadContext(collection, name);
+  const memoryLine = memory?.flavors?.length > 0
+    ? `Previously approved flavor texts that perfectly nailed this person's vibe — match this humor and tone:\n${memory.flavors.map(f => `  • "${f}"`).join('\n')}\n\n`
+    : '';
+  const prompt = `TCG card flavor text for a friend. 2 sentences max, under 30 words. Light roast, not mean.${photoLine}\n\n${squadContext}${memoryLine}Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}. Return ONLY a JSON array of 4 strings, no markdown.`;
   const text = await callClaude(prompt, 500, photoSrc);
   const cleaned = text.replace(/```json|```/g, '').trim();
   try {

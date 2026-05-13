@@ -1,7 +1,7 @@
 import { RARITY_ORDER } from '../constants';
 import CardFrame from '../components/CardFrame';
 
-export default function CollectionView({ active, collection }) {
+export default function CollectionView({ active, collection, onRemove }) {
   const rareCount = collection.filter((c) => RARITY_ORDER[c.rarity] >= 2).length;
 
   return (
@@ -28,7 +28,17 @@ export default function CollectionView({ active, collection }) {
       ) : (
         <div className="card-grid">
           {collection.map((card, i) => (
-            <CardFrame key={card.id} card={card} index={i} />
+            <div key={card.id} className="card-grid-item">
+              <CardFrame card={card} index={i} />
+              {onRemove && (
+                <button
+                  className="card-delete-btn"
+                  onClick={() => onRemove(card.id)}
+                  type="button"
+                  title={`Remove ${card.name}`}
+                >×</button>
+              )}
+            </div>
           ))}
         </div>
       )}

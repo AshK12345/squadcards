@@ -5,6 +5,7 @@ import PhotoUpload from '../components/PhotoUpload';
 import StatsSection from '../components/StatsSection';
 import AIFlavor from '../components/AIFlavor';
 import CardFrame from '../components/CardFrame';
+import { saveStats } from '../utils/aiMemory';
 
 export default function CreateView({ active, collection, onSave, showToast }) {
   const [name, setName] = useState('');
@@ -28,6 +29,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
   }, []);
 
   const handleSave = () => {
+    if (name) saveStats(name, stats);
     onSave(cardData);
     handleReset();
   };
@@ -85,6 +87,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
               name={name}
               type={type}
               photoSrc={photoSrc}
+              collection={collection}
               showToast={showToast}
             />
           </div>
@@ -106,6 +109,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
                 rarity={rarity}
                 stats={stats}
                 photoSrc={photoSrc}
+                collection={collection}
                 onSelect={setFlavor}
               />
             </div>

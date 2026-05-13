@@ -2,8 +2,9 @@ import { useState } from 'react';
 import BipolarSlider from './BipolarSlider';
 import { fmtBi } from '../constants';
 import { evaluateStats } from '../utils/ai';
+import { getMemory } from '../utils/aiMemory';
 
-export default function StatsSection({ stats, onStatChange, name, type, photoSrc, showToast }) {
+export default function StatsSection({ stats, onStatChange, name, type, photoSrc, collection, showToast }) {
   const [loading, setLoading] = useState(false);
 
   const handleAIEval = async () => {
@@ -13,7 +14,8 @@ export default function StatsSection({ stats, onStatChange, name, type, photoSrc
     }
     setLoading(true);
     try {
-      const scores = await evaluateStats(name || '', type || '', photoSrc);
+      const memory = getMemory(name);
+      const scores = await evaluateStats(name || '', type || '', photoSrc, collection || [], memory);
       const clamp = (v, mn, mx) => Math.min(mx, Math.max(mn, Math.round(v) || 0));
       const newVals = {
         rizz: clamp(scores.rizz, -999, 999),
