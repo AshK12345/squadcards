@@ -1,0 +1,69 @@
+import { fmtBi } from '../constants';
+
+async function callClaude(prompt, maxTokens = 500) {
+  const localKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  let resp;
+
+  if (localKey) {
+    // Local dev: call Anthropic directly
+    resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': localKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+  } else {
+    // Production: go through the server proxy at /api/ai
+    resp = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+  }
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.content.map(i => i.text || '').join('');
+}
+
+export async function evaluateStats(name, type) {
+  const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\nPerson: "${name}" — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE −999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE −999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nRespond ONLY with JSON, no markdown: {"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
+  const text = await callClaude(prompt, 200);
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+export async function suggestFlavor(name, type, rarity, stats) {
+  const statsStr = stats
+    .map(s => `${s.name}: ${s.bipolar ? fmtBi(s.val) : s.val}`)
+    .join(', ');
+  const prompt = `TCG card flavor text for a friend. 2 sentences max, under 30 words. Light roast, not mean. Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}. Return ONLY a JSON array of 4 strings, no markdown.`;
+  const text = await callClaude(prompt, 500);
+  const cleaned = text.replace(/```json|```/g, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const m = cleaned.match(/\[[\s\S]*\]/);
+    if (m) return JSON.parse(m[0]);
+    return [
+      'Defies all known logic.',
+      'Energy so strange it bends light.',
+      'Once showed up and nobody asked.',
+      'The reason we check our surroundings.',
+    ];
+  }
+}
