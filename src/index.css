@@ -1545,19 +1545,31 @@ body::before {
   50%       { opacity: 0.9; }
 }
 
-/* ── 3D card flip ── */
-.pof-flip-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  /* slow enough to clearly see the rotation arc */
-  transition: transform 1.0s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+/* ── ScaleX card flip (works on all platforms, no preserve-3d needed) ── */
+.pof-flip-card {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
 }
-.pof-flip-inner.is-flipped { transform: rotateY(180deg); }
 
-/* subtle pulse while face-down to hint it's interactive */
+/* Squeeze back side down to nothing */
+.pof-flipX-out {
+  animation: flipXOut 0.2s ease-in forwards;
+}
+/* Expand front side from nothing */
+.pof-flipX-in {
+  animation: flipXIn 0.22s ease-out forwards;
+}
+@keyframes flipXOut {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+@keyframes flipXIn {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Subtle float+pulse while face-down */
 .pof-unflipped-pulse {
   animation: unflippedPulse 2.4s ease-in-out infinite;
 }
@@ -1565,16 +1577,6 @@ body::before {
   0%, 100% { transform: scale(1)     translateY(0px); }
   50%       { transform: scale(1.022) translateY(-4px); }
 }
-
-.pof-flip-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-/* translateZ pushes each face to its own layer — prevents z-fighting bleed-through */
-.pof-flip-front { transform: translateZ(2px); }
-.pof-flip-back  { transform: rotateY(180deg) translateZ(2px); }
 
 /* ── Card back sheen (moving highlight) ── */
 .pof-back-sheen {

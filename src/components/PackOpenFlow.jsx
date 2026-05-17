@@ -2,16 +2,16 @@ import { useState, useRef } from 'react';
 import CardFrame from './CardFrame';
 import { RARITY_ORDER } from '../constants';
 
-// Cards that get a reveal burst (uncommon gets a lighter green one)
 const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
-// Timeout matches CSS animation-duration per rarity
 const BURST_DURATION = { uncommon: 950, rare: 1500, legendary: 1600, secret: 1600 };
+const FLIP_HALF = 200; // ms per half of the flip
 
 // phases: ready → tearing → stack
+// flipPhase: back → closing → opening → front
 export default function PackOpenFlow({ pack, packName, onClose }) {
   const [phase, setPhase]             = useState('ready');
   const [cardIdx, setCardIdx]         = useState(0);
-  const [flipped, setFlipped]         = useState(false);
+  const [flipPhase, setFlipPhase]     = useState('back');
   const [slideDir, setSlideDir]       = useState('right');
   const [cardKey, setCardKey]         = useState(0);
   const [exitCard, setExitCard]       = useState(null);
@@ -41,23 +41,29 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     setTimeout(() => {
       setPhase('stack');
       setCardIdx(0);
-      setFlipped(false);
+      setFlipPhase('back');
       setCardKey(k => k + 1);
     }, 700);
   };
 
   const flipCard = () => {
-    if (flipped) return;
-    setFlipped(true);
-    const card = orderedCards[cardIdx];
-    if (BURST_RARITIES.has(card.rarity)) {
-      setBurstRarity(card.rarity);
-      setBurstKey(k => k + 1);
-      setTimeout(() => setBurstRarity(null), BURST_DURATION[card.rarity] ?? 1000);
-    }
+    if (flipPhase !== 'back') return;
+    // Phase 1: squeeze card back down to nothing
+    setFlipPhase('closing');
+    // Midpoint: swap content, then expand showing card front
+    setTimeout(() => {
+      setFlipPhase('opening');
+      const card = orderedCards[cardIdx];
+      if (BURST_RARITIES.has(card.rarity)) {
+        setBurstRarity(card.rarity);
+        setBurstKey(k => k + 1);
+        setTimeout(() => setBurstRarity(null), BURST_DURATION[card.rarity] ?? 1000);
+      }
+    }, FLIP_HALF);
+    // Done
+    setTimeout(() => setFlipPhase('front'), FLIP_HALF * 2);
   };
 
-  /* ── pointer helpers ── */
   const pt = (e) => {
     const s = e.touches?.[0] ?? e.changedTouches?.[0] ?? e;
     return { x: s.clientX, y: s.clientY };
@@ -74,34 +80,36 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     const { x, y } = pt(e);
     swipeRef.current.dx = x - swipeRef.current.x0;
     swipeRef.current.dy = y - swipeRef.current.y0;
-    if (phase === 'ready' || (phase === 'stack' && flipped)) {
+    if (phase === 'ready' || (phase === 'stack' && flipPhase === 'front')) {
       setLiveDx(swipeRef.current.dx);
     }
   };
 
   const onEnd = () => {
     if (!swipeRef.current.active) return;
-    const { dx } = swipeRef.current;
-    const dist = Math.sqrt(dx * dx + swipeRef.current.dy * swipeRef.current.dy);
+    const { dx, dy } = swipeRef.current;
+    const dist = Math.sqrt(dx * dx + dy * dy);
     swipeRef.current.active = false;
     setLiveDx(0);
 
     if (phase === 'ready') { openPack(); return; }
 
     if (phase === 'stack') {
-      if (!flipped) {
-        // only a clean tap flips — swipes on a face-down card are ignored
-        if (dist < 20) flipCard();
+      // Ignore all input mid-flip
+      if (flipPhase === 'closing' || flipPhase === 'opening') return;
+
+      if (flipPhase === 'back') {
+        if (dist < 20) flipCard(); // tap only — swipes on face-down do nothing
         return;
       }
-      // card is face-up: only swipes navigate, taps do nothing
+
+      // front: swipe to navigate, tap does nothing
       if (dist < 20) return;
       if (dx < -50 && cardIdx < total - 1) advance(true);
       else if (dx > 50 && cardIdx > 0)     advance(false);
     }
   };
 
-  // Prevent nav button clicks from leaking into the backdrop gesture system
   const stopProp = (e) => e.stopPropagation();
 
   const advance = (forward) => {
@@ -111,7 +119,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     setSlideDir(forward ? 'right' : 'left');
     setCardIdx(i => forward ? i + 1 : i - 1);
     setCardKey(k => k + 1);
-    setFlipped(false);
+    setFlipPhase('back');
     setBurstRarity(null);
     setTimeout(() => setExitCard(null), 420);
   };
@@ -121,6 +129,14 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
 
   const currentCard = orderedCards[cardIdx];
   const isLast      = cardIdx === total - 1;
+
+  // Whether to show the card front (during opening or fully revealed)
+  const showFront = flipPhase === 'opening' || flipPhase === 'front';
+
+  // CSS class driving the scaleX animation
+  const flipAnimClass =
+    flipPhase === 'closing' ? 'pof-flipX-out' :
+    flipPhase === 'opening' ? 'pof-flipX-in'  : '';
 
   const TearHalf = ({ top }) => (
     <div
@@ -150,7 +166,6 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     >
       <div className="pof-flash" ref={flashRef} />
 
-      {/* Holo burst — fixed, outside all 3D contexts */}
       {burstRarity && (
         <div key={burstKey} className={`pof-reveal-burst pof-burst-${burstRarity}`} />
       )}
@@ -215,58 +230,41 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
               </div>
             )}
 
-            {/* current card */}
+            {/* Current card — scaleX flip */}
             <div
               key={cardKey}
-              style={liveDx !== 0 && flipped
-                ? { position: 'absolute', inset: 0, perspective: '900px', transform: `translateX(${liveDx * 0.55}px) rotate(${liveDx * 0.025}deg)`, transition: 'none', zIndex: 30 }
-                : { position: 'absolute', inset: 0, perspective: '900px', zIndex: 30 }}
+              style={liveDx !== 0 && showFront
+                ? { position: 'absolute', inset: 0, transform: `translateX(${liveDx * 0.55}px) rotate(${liveDx * 0.025}deg)`, transition: 'none', zIndex: 30 }
+                : { position: 'absolute', inset: 0, zIndex: 30 }}
             >
-              <div className={`pof-flip-inner ${flipped ? 'is-flipped' : 'pof-unflipped-pulse'}`}>
-
-                {/* FRONT — face down */}
-                <div className="pof-flip-face pof-flip-front">
-                  <div className="pof-card-back"><ScLogo /></div>
-                  <div className="pof-back-sheen" />
-                  <div className="pof-tap-hint">👆 Tap to reveal</div>
-                </div>
-
-                {/* BACK — face up */}
-                <div className="pof-flip-face pof-flip-back">
+              <div className={`pof-flip-card ${flipAnimClass} ${flipPhase === 'back' ? 'pof-unflipped-pulse' : ''}`}>
+                {showFront ? (
                   <div className={`pof-slide-in-${slideDir}`} style={{ position: 'absolute', inset: 0 }}>
                     <CardFrame card={currentCard} index={cardIdx} noTilt />
                   </div>
-                </div>
-
+                ) : (
+                  <>
+                    <div className="pof-card-back"><ScLogo /></div>
+                    <div className="pof-back-sheen" />
+                    {flipPhase === 'back' && <div className="pof-tap-hint">👆 Tap to reveal</div>}
+                  </>
+                )}
               </div>
             </div>
           </div>
 
+          {/* No arrow buttons — swipe only */}
           <div className="pof-nav">
-            <button
-              className="pof-nav-btn"
-              onMouseDown={stopProp}
-              onTouchStart={stopProp}
-              onClick={() => advance(false)}
-              disabled={cardIdx === 0}
-            >←</button>
-            <span className="pof-nav-hint">
-              {!flipped
+            <span className="pof-nav-hint" style={{ minWidth: 'unset' }}>
+              {flipPhase === 'back'
                 ? 'Tap card to reveal'
                 : isLast
                   ? '🎉 All cards revealed!'
-                  : 'Swipe to navigate'}
+                  : '← Swipe to navigate →'}
             </span>
-            <button
-              className="pof-nav-btn"
-              onMouseDown={stopProp}
-              onTouchStart={stopProp}
-              onClick={() => flipped ? advance(true) : flipCard()}
-              disabled={isLast && flipped}
-            >→</button>
           </div>
 
-          {isLast && flipped && (
+          {isLast && flipPhase === 'front' && (
             <button
               className="btn btn-primary pof-done-btn"
               onMouseDown={stopProp}
@@ -292,7 +290,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
   );
 }
 
-/* SC logo — gradient fill reads as 3D raised letters, no glitch offset */
+/* SC logo — gradient fill (lit from top) gives raised 3D look without glitch */
 function ScLogo() {
   return (
     <svg
@@ -307,24 +305,12 @@ function ScLogo() {
           <stop offset="100%" stopColor="rgba(255,255,255,0.10)" />
         </linearGradient>
       </defs>
-      {/* 1px shadow — depth without glitch */}
-      <text
-        x="115" y="186"
-        fontFamily="Nerko One, cursive"
-        fontSize="178"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="rgba(0,0,0,0.28)"
-      >SC</text>
-      {/* main — gradient top-to-bottom = lit from above */}
-      <text
-        x="115" y="185"
-        fontFamily="Nerko One, cursive"
-        fontSize="178"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="url(#scGrad)"
-      >SC</text>
+      {/* 1px drop for depth */}
+      <text x="115" y="186" fontFamily="Nerko One, cursive" fontSize="178"
+        textAnchor="middle" dominantBaseline="central" fill="rgba(0,0,0,0.28)">SC</text>
+      {/* gradient main */}
+      <text x="115" y="185" fontFamily="Nerko One, cursive" fontSize="178"
+        textAnchor="middle" dominantBaseline="central" fill="url(#scGrad)">SC</text>
     </svg>
   );
 }
