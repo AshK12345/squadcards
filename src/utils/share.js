@@ -9,9 +9,13 @@ export async function createShareablePack(cards, packName, deviceId) {
   const allReal = cards.every(c => UUID_RE.test(String(c.id)));
 
   if (SUPABASE_ENABLED && deviceId && allReal) {
+    const snapshot = cards.map(c => ({
+      id: c.id, name: c.name, type: c.type, rarity: c.rarity,
+      flavor: c.flavor, photo: c.photo || null, stats: c.stats,
+    }));
     const { data, error } = await supabase
       .from('packs')
-      .insert({ device_id: deviceId, name: packName, card_ids: cards.map(c => c.id) })
+      .insert({ device_id: deviceId, name: packName, card_ids: cards.map(c => c.id), card_snapshot: snapshot })
       .select()
       .single();
 
@@ -38,6 +42,12 @@ export async function fetchSharedPack(token) {
 
     if (error || !pack) return null;
 
+    // Prefer the self-contained snapshot (immune to card deletions)
+    if (Array.isArray(pack.card_snapshot) && pack.card_snapshot.length > 0) {
+      return { name: pack.name, cards: pack.card_snapshot };
+    }
+
+    // Fallback: re-fetch live cards by ID (legacy packs without snapshot)
     const { data: cardRows } = await supabase
       .from('cards')
       .select('*')

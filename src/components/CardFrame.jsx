@@ -107,7 +107,9 @@ export default function CardFrame({ card, index, noTilt = false }) {
         <div className="card-type-line">{card.type}</div>
 
         <div className="card-text-box">
-          <div className="card-flavor">{card.flavor || 'Allegedly a person.'}</div>
+          <div className="card-flavor">
+            {(card.flavor || 'Allegedly a person.').slice(0, 100)}
+          </div>
           <div className="card-stat-line">
             {card.stats?.map((s, i) => {
               const neg  = s.bipolar && s.val < 0;
