@@ -2,21 +2,22 @@ import { useState, useRef } from 'react';
 import CardFrame from './CardFrame';
 import { RARITY_ORDER } from '../constants';
 
-const HOLO = new Set(['rare', 'legendary', 'secret']);
+// Cards that get a reveal burst (uncommon gets a lighter green one)
+const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
+// Timeout matches CSS animation-duration per rarity
+const BURST_DURATION = { uncommon: 950, rare: 1500, legendary: 1600, secret: 1600 };
 
 // phases: ready → tearing → stack
 export default function PackOpenFlow({ pack, packName, onClose }) {
-  const [phase, setPhase]         = useState('ready');     // skip expanding entirely
-  const [cardIdx, setCardIdx]     = useState(0);
-  const [flipped, setFlipped]     = useState(false);
-  const [flipTime, setFlipTime]   = useState(0);
-  const [slideDir, setSlideDir]   = useState('right');
-  const [cardKey, setCardKey]     = useState(0);
-  const [exitCard, setExitCard]   = useState(null);
-  const [burstKey, setBurstKey]   = useState(0);
+  const [phase, setPhase]             = useState('ready');
+  const [cardIdx, setCardIdx]         = useState(0);
+  const [flipped, setFlipped]         = useState(false);
+  const [slideDir, setSlideDir]       = useState('right');
+  const [cardKey, setCardKey]         = useState(0);
+  const [exitCard, setExitCard]       = useState(null);
+  const [burstKey, setBurstKey]       = useState(0);
   const [burstRarity, setBurstRarity] = useState(null);
 
-  // DOM ref for flash — manipulate directly to avoid re-renders during tearing
   const flashRef = useRef(null);
   const swipeRef = useRef({ active: false, x0: 0, y0: 0, dx: 0, dy: 0 });
   const [liveDx, setLiveDx] = useState(0);
@@ -35,8 +36,8 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
 
   const openPack = () => {
     if (phase !== 'ready') return;
-    triggerFlash();                         // no state change → no re-render
-    setPhase('tearing');                    // single state change for the tear
+    triggerFlash();
+    setPhase('tearing');
     setTimeout(() => {
       setPhase('stack');
       setCardIdx(0);
@@ -48,12 +49,11 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
   const flipCard = () => {
     if (flipped) return;
     setFlipped(true);
-    setFlipTime(Date.now());
     const card = orderedCards[cardIdx];
-    if (HOLO.has(card.rarity)) {
+    if (BURST_RARITIES.has(card.rarity)) {
       setBurstRarity(card.rarity);
       setBurstKey(k => k + 1);
-      setTimeout(() => setBurstRarity(null), 900);
+      setTimeout(() => setBurstRarity(null), BURST_DURATION[card.rarity] ?? 1000);
     }
   };
 
@@ -81,8 +81,8 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
 
   const onEnd = () => {
     if (!swipeRef.current.active) return;
-    const { dx, dy } = swipeRef.current;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const { dx } = swipeRef.current;
+    const dist = Math.sqrt(dx * dx + swipeRef.current.dy * swipeRef.current.dy);
     swipeRef.current.active = false;
     setLiveDx(0);
 
@@ -90,17 +90,19 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
 
     if (phase === 'stack') {
       if (!flipped) {
+        // only a clean tap flips — swipes on a face-down card are ignored
         if (dist < 20) flipCard();
         return;
       }
-      if (dist < 20) {
-        if (Date.now() - flipTime > 350 && !isLast) advance(true);
-        return;
-      }
-      if (dx < -55 && cardIdx < total - 1) advance(true);
-      else if (dx > 55 && cardIdx > 0)     advance(false);
+      // card is face-up: only swipes navigate, taps do nothing
+      if (dist < 20) return;
+      if (dx < -50 && cardIdx < total - 1) advance(true);
+      else if (dx > 50 && cardIdx > 0)     advance(false);
     }
   };
+
+  // Prevent nav button clicks from leaking into the backdrop gesture system
+  const stopProp = (e) => e.stopPropagation();
 
   const advance = (forward) => {
     if (forward  && cardIdx >= total - 1) return;
@@ -146,10 +148,9 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
       onTouchMove={onMove}
       onTouchEnd={onEnd}
     >
-      {/* Flash — DOM-only, no state, no re-renders */}
       <div className="pof-flash" ref={flashRef} />
 
-      {/* Holo burst — fixed overlay, outside all 3D contexts */}
+      {/* Holo burst — fixed, outside all 3D contexts */}
       {burstRarity && (
         <div key={burstKey} className={`pof-reveal-burst pof-burst-${burstRarity}`} />
       )}
@@ -214,7 +215,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
               </div>
             )}
 
-            {/* current card — outer handles swipe drag */}
+            {/* current card */}
             <div
               key={cardKey}
               style={liveDx !== 0 && flipped
@@ -223,16 +224,14 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
             >
               <div className={`pof-flip-inner ${flipped ? 'is-flipped' : 'pof-unflipped-pulse'}`}>
 
-                {/* FRONT — face down (card back) */}
+                {/* FRONT — face down */}
                 <div className="pof-flip-face pof-flip-front">
-                  <div className="pof-card-back">
-                    <ScLogo />
-                  </div>
+                  <div className="pof-card-back"><ScLogo /></div>
                   <div className="pof-back-sheen" />
                   <div className="pof-tap-hint">👆 Tap to reveal</div>
                 </div>
 
-                {/* BACK — face up (actual card) */}
+                {/* BACK — face up */}
                 <div className="pof-flip-face pof-flip-back">
                   <div className={`pof-slide-in-${slideDir}`} style={{ position: 'absolute', inset: 0 }}>
                     <CardFrame card={currentCard} index={cardIdx} noTilt />
@@ -244,23 +243,36 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
           </div>
 
           <div className="pof-nav">
-            <button className="pof-nav-btn" onClick={() => advance(false)} disabled={cardIdx === 0}>←</button>
+            <button
+              className="pof-nav-btn"
+              onMouseDown={stopProp}
+              onTouchStart={stopProp}
+              onClick={() => advance(false)}
+              disabled={cardIdx === 0}
+            >←</button>
             <span className="pof-nav-hint">
               {!flipped
                 ? 'Tap card to reveal'
                 : isLast
                   ? '🎉 All cards revealed!'
-                  : 'Tap or swipe → for next'}
+                  : 'Swipe to navigate'}
             </span>
             <button
               className="pof-nav-btn"
+              onMouseDown={stopProp}
+              onTouchStart={stopProp}
               onClick={() => flipped ? advance(true) : flipCard()}
               disabled={isLast && flipped}
             >→</button>
           </div>
 
           {isLast && flipped && (
-            <button className="btn btn-primary pof-done-btn" onClick={onClose}>
+            <button
+              className="btn btn-primary pof-done-btn"
+              onMouseDown={stopProp}
+              onTouchStart={stopProp}
+              onClick={onClose}
+            >
               Done ✓
             </button>
           )}
@@ -268,13 +280,19 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
       )}
 
       {phase !== 'tearing' && (
-        <button className="pof-close" onClick={onClose} type="button">✕</button>
+        <button
+          className="pof-close"
+          onMouseDown={stopProp}
+          onTouchStart={stopProp}
+          onClick={onClose}
+          type="button"
+        >✕</button>
       )}
     </div>
   );
 }
 
-/* SC logo — vector, sits on the card back */
+/* SC logo — gradient fill reads as 3D raised letters, no glitch offset */
 function ScLogo() {
   return (
     <svg
@@ -283,28 +301,29 @@ function ScLogo() {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      {/* drop shadow */}
+      <defs>
+        <linearGradient id="scGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="rgba(255,255,255,0.38)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0.10)" />
+        </linearGradient>
+      </defs>
+      {/* 1px shadow — depth without glitch */}
       <text
-        x="115" y="185"
+        x="115" y="186"
         fontFamily="Nerko One, cursive"
         fontSize="178"
-        fontWeight="900"
         textAnchor="middle"
         dominantBaseline="central"
-        fill="rgba(0,0,0,0.35)"
-        dx="3" dy="4"
+        fill="rgba(0,0,0,0.28)"
       >SC</text>
-      {/* main lettering */}
+      {/* main — gradient top-to-bottom = lit from above */}
       <text
         x="115" y="185"
         fontFamily="Nerko One, cursive"
         fontSize="178"
-        fontWeight="900"
         textAnchor="middle"
         dominantBaseline="central"
-        fill="rgba(255,255,255,0.22)"
-        stroke="rgba(255,255,255,0.08)"
-        strokeWidth="2"
+        fill="url(#scGrad)"
       >SC</text>
     </svg>
   );

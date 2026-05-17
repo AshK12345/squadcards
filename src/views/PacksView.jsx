@@ -29,6 +29,18 @@ export default function PacksView({
     }
   }, [incomingPack, active]);
 
+  // When collection changes (e.g. card deleted), scrub that card out of any
+  // already-sealed pack so it doesn't appear without a refresh
+  useEffect(() => {
+    setCurrentPack(prev => {
+      if (!prev) return prev;
+      const validIds = new Set(collection.map(c => c.id));
+      const filtered = prev.cards.filter(c => validIds.has(c.id));
+      if (filtered.length === prev.cards.length) return prev; // nothing changed
+      return filtered.length > 0 ? { ...prev, cards: filtered } : null;
+    });
+  }, [collection]);
+
   const buildPack = async () => {
     if (collection.length < MIN_PACK) {
       showToast('Add at least one card to your collection first!');

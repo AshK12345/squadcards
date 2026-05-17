@@ -1551,8 +1551,8 @@ body::before {
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  /* smooth ease-in-out — no spring overshoot past 90° which causes snap glitch */
-  transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+  /* slow enough to clearly see the rotation arc */
+  transition: transform 1.0s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 .pof-flip-inner.is-flipped { transform: rotateY(180deg); }
@@ -1614,22 +1614,29 @@ body::before {
   animation: hintPulse 1.6s ease-in-out infinite;
 }
 
-/* ── Radial burst on holo card reveal ── fixed overlay, outside all 3D contexts */
+/* ── Radial burst on card reveal ── fixed overlay, outside all 3D contexts */
 .pof-reveal-burst {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 450;
-  animation: revealBurst 0.9s ease-out forwards;
+  animation: revealBurst ease-out forwards;
 }
-.pof-burst-rare      { background: radial-gradient(circle at 50% 48%, rgba(80,130,255,0.65) 0%, rgba(37,99,235,0.3) 30%, transparent 65%); }
-.pof-burst-legendary { background: radial-gradient(circle at 50% 48%, rgba(255,210,50,0.72) 0%, rgba(245,158,11,0.35) 30%, transparent 65%); }
+/* duration per rarity — uncommon quick, rare+ slow and dramatic */
+.pof-burst-uncommon  { animation-duration: 0.95s; }
+.pof-burst-rare      { animation-duration: 1.5s;  }
+.pof-burst-legendary { animation-duration: 1.6s;  }
+.pof-burst-secret    { animation-duration: 1.6s;  }
+
+.pof-burst-uncommon  { background: radial-gradient(circle at 50% 48%, rgba(80,210,80,0.55)  0%, rgba(40,160,40,0.25)   30%, transparent 65%); }
+.pof-burst-rare      { background: radial-gradient(circle at 50% 48%, rgba(80,130,255,0.65) 0%, rgba(37,99,235,0.3)    30%, transparent 65%); }
+.pof-burst-legendary { background: radial-gradient(circle at 50% 48%, rgba(255,210,50,0.72) 0%, rgba(245,158,11,0.35)  30%, transparent 65%); }
 .pof-burst-secret    { background: radial-gradient(circle at 50% 48%, rgba(210,140,255,0.72) 0%, rgba(168,85,247,0.35) 30%, transparent 65%); }
 
 @keyframes revealBurst {
   0%   { opacity: 0; transform: scale(0.4); }
-  25%  { opacity: 1; transform: scale(0.9); }
-  100% { opacity: 0; transform: scale(1.6); }
+  20%  { opacity: 1; transform: scale(0.85); }
+  100% { opacity: 0; transform: scale(1.7); }
 }
 
 /* ── SC logo on card back ── */
