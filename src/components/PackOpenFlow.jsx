@@ -246,7 +246,6 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
                   <>
                     <div className="pof-card-back"><ScLogo /></div>
                     <div className="pof-back-sheen" />
-                    {flipPhase === 'back' && <div className="pof-tap-hint">👆 Tap to reveal</div>}
                   </>
                 )}
               </div>
@@ -255,13 +254,11 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
 
           {/* No arrow buttons — swipe only */}
           <div className="pof-nav">
-            <span className="pof-nav-hint" style={{ minWidth: 'unset' }}>
-              {flipPhase === 'back'
-                ? 'Tap card to reveal'
-                : isLast
-                  ? '🎉 All cards revealed!'
-                  : '← Swipe to navigate →'}
-            </span>
+            {isLast && flipPhase === 'front' && (
+              <span className="pof-nav-hint" style={{ minWidth: 'unset' }}>
+                🎉 All cards revealed!
+              </span>
+            )}
           </div>
 
           {isLast && flipPhase === 'front' && (

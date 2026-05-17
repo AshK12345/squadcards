@@ -102,6 +102,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
                 value={flavor}
                 onChange={(e) => setFlavor(e.target.value)}
                 rows={3}
+                maxLength={100}
               />
               <AIFlavor
                 name={name}

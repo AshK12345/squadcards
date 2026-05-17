@@ -276,6 +276,15 @@ body::before {
 .rarity-legendary .pip { background: #f59e0b; }
 .rarity-secret    .pip { background: linear-gradient(135deg, #c084fc, #60a5fa); }
 
+.card-set-stamp {
+  font-family: 'Nerko One', cursive;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.28);
+  letter-spacing: 1.5px;
+  text-align: center;
+  flex: 1;
+}
 .card-number { font-family: 'Fredoka One', sans-serif; font-size: 8px; color: #aaa; }
 
 .card-rarity-stamp { position: absolute; top: 0; right: 0; width: 0; height: 0; border-style: solid; }

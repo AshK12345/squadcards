@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { HP_MAP, PIPS, fmtBi } from '../constants';
 
 const HOLO = new Set(['rare', 'legendary', 'secret']);
@@ -68,11 +68,21 @@ export default function CardFrame({ card, index, noTilt = false }) {
     if (sparkRef.current) sparkRef.current.style.opacity = '0';
   };
 
-  const onMouseMove  = (e) => applyTilt(e.clientX, e.clientY);
-  const onTouchMove  = (e) => {
-    if (e.cancelable) e.preventDefault();
-    applyTilt(e.touches[0].clientX, e.touches[0].clientY);
-  };
+  const onMouseMove = (e) => applyTilt(e.clientX, e.clientY);
+
+  // Non-passive touchmove so preventDefault actually stops page scroll while tilting
+  const applyTiltRef = useRef(applyTilt);
+  applyTiltRef.current = applyTilt;
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const handler = (e) => {
+      if (e.cancelable) e.preventDefault();
+      applyTiltRef.current(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    el.addEventListener('touchmove', handler, { passive: false });
+    return () => el.removeEventListener('touchmove', handler);
+  }, []);
 
   return (
     <div
@@ -80,7 +90,6 @@ export default function CardFrame({ card, index, noTilt = false }) {
       ref={wrapRef}
       onMouseMove={onMouseMove}
       onMouseLeave={clearTilt}
-      onTouchMove={onTouchMove}
       onTouchEnd={clearTilt}
       style={{ perspective: '550px' }}
     >
@@ -123,6 +132,7 @@ export default function CardFrame({ card, index, noTilt = false }) {
           <div className="rarity-pip">
             {Array.from({ length: pipCount }).map((_, i) => <div key={i} className="pip" />)}
           </div>
+          <div className="card-set-stamp">SC</div>
           <div className="card-number">#{String((index ?? 0) + 1).padStart(3, '0')}</div>
         </div>
       </div>
