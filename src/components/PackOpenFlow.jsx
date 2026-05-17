@@ -1,30 +1,60 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CardFrame from './CardFrame';
 import { RARITY_ORDER } from '../constants';
 
-// phases: expanding → shuffling → ready → tearing → stack
-export default function PackOpenFlow({ pack, packName, onClose }) {
-  const [phase, setPhase]       = useState('expanding');
-  const [cardIdx, setCardIdx]   = useState(0);
-  const [slideDir, setSlideDir] = useState('right');
-  const [cardKey, setCardKey]   = useState(0);
-  const [exitCard, setExitCard] = useState(null); // { card, key, forward }
+const HOLO = new Set(['rare', 'legendary', 'secret']);
 
-  // swipe tracking
+// phases: expanding → ready → tearing → stack
+export default function PackOpenFlow({ pack, packName, onClose }) {
+  const [phase, setPhase]         = useState('expanding');
+  const [cardIdx, setCardIdx]     = useState(0);
+  const [flipped, setFlipped]     = useState(false);
+  const [flipTime, setFlipTime]   = useState(0);
+  const [slideDir, setSlideDir]   = useState('right');
+  const [cardKey, setCardKey]     = useState(0);
+  const [exitCard, setExitCard]   = useState(null);
+  const [flashOn, setFlashOn]     = useState(false);
+  const [burstKey, setBurstKey]   = useState(0);
+  const [showBurst, setShowBurst] = useState(false);
+
   const swipeRef = useRef({ active: false, x0: 0, y0: 0, dx: 0, dy: 0 });
-  const [liveDx, setLiveDx]     = useState(0);
+  const [liveDx, setLiveDx] = useState(0);
 
   const orderedCards = [...pack].sort(
     (a, b) => RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]
   );
   const total = orderedCards.length;
 
-  /* expanding → shuffling → ready */
+  // expanding → ready
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('shuffling'), 380);
-    const t2 = setTimeout(() => setPhase('ready'), 1680);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t = setTimeout(() => setPhase('ready'), 380);
+    return () => clearTimeout(t);
   }, []);
+
+  const openPack = () => {
+    if (phase !== 'ready') return;
+    setPhase('tearing');
+    setFlashOn(true);
+    setTimeout(() => setFlashOn(false), 500);
+    setTimeout(() => {
+      setPhase('stack');
+      setCardIdx(0);
+      setFlipped(false);
+      setCardKey(k => k + 1);
+    }, 700);
+  };
+
+  const flipCard = () => {
+    if (flipped) return;
+    setFlipped(true);
+    setFlipTime(Date.now());
+    const card = orderedCards[cardIdx];
+    if (HOLO.has(card.rarity)) {
+      setBurstKey(k => k + 1);
+      setShowBurst(true);
+      setTimeout(() => setShowBurst(false), 900);
+    }
+  };
 
   /* ── pointer helpers ── */
   const pt = (e) => {
@@ -43,7 +73,9 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     const { x, y } = pt(e);
     swipeRef.current.dx = x - swipeRef.current.x0;
     swipeRef.current.dy = y - swipeRef.current.y0;
-    setLiveDx(swipeRef.current.dx);
+    if (phase === 'ready' || (phase === 'stack' && flipped)) {
+      setLiveDx(swipeRef.current.dx);
+    }
   };
 
   const onEnd = () => {
@@ -53,13 +85,21 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     swipeRef.current.active = false;
     setLiveDx(0);
 
-    if (phase === 'ready' && dist > 48) {
-      setPhase('tearing');
-      setTimeout(() => { setPhase('stack'); setCardIdx(0); setCardKey(k => k + 1); }, 680);
+    if (phase === 'ready') {
+      openPack();
       return;
     }
 
     if (phase === 'stack') {
+      if (!flipped) {
+        if (dist < 20) flipCard();
+        return;
+      }
+      // already flipped — tap to advance, swipe to navigate
+      if (dist < 20) {
+        if (Date.now() - flipTime > 350 && !isLast) advance(true);
+        return;
+      }
       if (dx < -55 && cardIdx < total - 1) advance(true);
       else if (dx > 55 && cardIdx > 0)     advance(false);
     }
@@ -73,20 +113,18 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     setSlideDir(forward ? 'right' : 'left');
     setCardIdx(i => forward ? i + 1 : i - 1);
     setCardKey(k => k + 1);
+    setFlipped(false);
+    setShowBurst(false);
     setTimeout(() => setExitCard(null), 420);
   };
 
-  const goNext = () => advance(true);
-  const goPrev = () => advance(false);
-
-  /* ── ghost card stack (cards still to come) ── */
   const ghosts = [];
   for (let i = 1; i <= Math.min(3, total - cardIdx - 1); i++) ghosts.push(i);
 
   const currentCard = orderedCards[cardIdx];
   const isLast      = cardIdx === total - 1;
+  const isHolo      = HOLO.has(currentCard?.rarity);
 
-  /* ── tear pieces ── */
   const TearHalf = ({ top }) => (
     <div
       className={`pof-tear-half pof-tear-${top ? 'top' : 'bot'}`}
@@ -113,6 +151,9 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
       onTouchMove={onMove}
       onTouchEnd={onEnd}
     >
+      {/* White flash on tear */}
+      <div className={`pof-flash ${flashOn ? 'on' : ''}`} />
+
       {/* ── EXPANDING ── */}
       {phase === 'expanding' && (
         <div className="pof-pack-stage pof-expanding">
@@ -125,42 +166,23 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
         </div>
       )}
 
-      {/* ── SHUFFLING ── */}
-      {phase === 'shuffling' && (
-        <div className="pof-pack-stage">
-          <div className="pof-shuffle-wrap">
-            {/* card backs that fan out and snap back */}
-            <div className="pof-shuffle-card pof-shuffle-0"><div className="pof-card-back" /></div>
-            <div className="pof-shuffle-card pof-shuffle-1"><div className="pof-card-back" /></div>
-            <div className="pof-shuffle-card pof-shuffle-2"><div className="pof-card-back" /></div>
-            {/* pack sits on top */}
-            <div className="pof-pack-wrap pof-pack-top">
-              <div className="pack-body">
-                <div className="pack-title-text">{packName?.toUpperCase()}</div>
-                <div className="pack-count-badge">{total} cards</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── READY ── */}
       {phase === 'ready' && (
         <div className="pof-pack-stage pof-ready">
+          <div className="pof-pack-aura" />
           <div
-            className="pof-pack-wrap"
+            className="pof-pack-wrap pof-pack-float"
             style={liveDx !== 0
-              ? { transform: `rotate(${liveDx * 0.025}deg) scale(${1 + Math.abs(liveDx) * 0.001})` }
+              ? { transform: `rotate(${liveDx * 0.025}deg) scale(${1 + Math.abs(liveDx) * 0.001})`, animation: 'none' }
               : undefined}
           >
             <div className="pack-body">
+              <div className="pof-tear-line" />
               <div className="pack-title-text">{packName?.toUpperCase()}</div>
               <div className="pack-count-badge">{total} cards</div>
             </div>
           </div>
-          <p className="pof-hint">
-            {Math.abs(liveDx) > 20 ? '💢 RIP IT!' : 'Swipe anywhere to tear it open'}
-          </p>
+          <p className="pof-hint">Tap to tear it open ⚡</p>
         </div>
       )}
 
@@ -180,7 +202,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
           </div>
 
           <div className="pof-deck">
-            {/* ghost cards behind current */}
+            {/* ghost card backs stacked behind */}
             {ghosts.map((offset) => (
               <div
                 key={offset}
@@ -195,7 +217,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
               </div>
             ))}
 
-            {/* exiting card — sinks into the stack */}
+            {/* exiting card */}
             {exitCard && (
               <div
                 key={`exit-${exitCard.key}`}
@@ -206,36 +228,65 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
               </div>
             )}
 
-            {/* current card */}
+            {/* current card — outer wrapper handles swipe translation */}
             <div
               key={cardKey}
-              className={`pof-main-card pof-slide-in-${slideDir}`}
-              style={liveDx !== 0
-                ? { transform: `translateX(${liveDx * 0.55}px) rotate(${liveDx * 0.025}deg)`, transition: 'none', zIndex: 30 }
-                : { zIndex: 30 }}
+              style={liveDx !== 0 && flipped
+                ? { position: 'absolute', inset: 0, perspective: '900px', transformStyle: 'preserve-3d', transform: `translateX(${liveDx * 0.55}px) rotate(${liveDx * 0.025}deg)`, transition: 'none', zIndex: 30 }
+                : { position: 'absolute', inset: 0, perspective: '900px', transformStyle: 'preserve-3d', zIndex: 30 }}
             >
-              <CardFrame card={currentCard} index={cardIdx} />
+              {/* flip inner — rotates on Y axis */}
+              <div className={`pof-flip-inner ${flipped ? 'is-flipped' : 'pof-unflipped-pulse'}`}>
+
+                {/* FRONT — card back (face down) */}
+                <div className="pof-flip-face pof-flip-front">
+                  <div className="pof-card-back" />
+                  <div className="pof-back-sheen" />
+                  <div className="pof-tap-hint">👆 Tap to reveal</div>
+                </div>
+
+                {/* BACK — actual card (face up) */}
+                <div className="pof-flip-face pof-flip-back">
+                  <div className={`pof-slide-in-${slideDir}`} style={{ position: 'absolute', inset: 0 }}>
+                    <CardFrame card={currentCard} index={cardIdx} noTilt />
+                  </div>
+                  {showBurst && isHolo && (
+                    <div
+                      key={burstKey}
+                      className={`pof-reveal-burst pof-burst-${currentCard?.rarity}`}
+                    />
+                  )}
+                </div>
+
+              </div>
             </div>
           </div>
 
           {/* nav */}
           <div className="pof-nav">
-            <button className="pof-nav-btn" onClick={goPrev} disabled={cardIdx === 0}>←</button>
+            <button className="pof-nav-btn" onClick={() => advance(false)} disabled={cardIdx === 0}>←</button>
             <span className="pof-nav-hint">
-              {isLast ? "🎉 That's the lot!" : 'Swipe or tap arrows'}
+              {!flipped
+                ? 'Tap card to reveal'
+                : isLast
+                  ? '🎉 All cards revealed!'
+                  : 'Tap or swipe → for next'}
             </span>
-            <button className="pof-nav-btn" onClick={goNext} disabled={isLast}>→</button>
+            <button
+              className="pof-nav-btn"
+              onClick={() => flipped ? advance(true) : flipCard()}
+              disabled={isLast && flipped}
+            >→</button>
           </div>
 
-          {isLast && (
+          {isLast && flipped && (
             <button className="btn btn-primary pof-done-btn" onClick={onClose}>
-              Add to collection ✓
+              Done ✓
             </button>
           )}
         </div>
       )}
 
-      {/* close — always except mid-tear */}
       {phase !== 'tearing' && (
         <button className="pof-close" onClick={onClose} type="button">✕</button>
       )}

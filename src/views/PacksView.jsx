@@ -31,7 +31,7 @@ export default function PacksView({
 
   const buildPack = async () => {
     if (collection.length < MIN_PACK) {
-      showToast(`Need at least ${MIN_PACK} cards in your collection!`);
+      showToast('Add at least one card to your collection first!');
       return;
     }
     setSealing(true);
@@ -76,7 +76,7 @@ export default function PacksView({
           <div className="form-row">
             <label className="form-label">Pack Size</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {[3, 5, 7, 10].map(n => (
+              {[2, 3, 5, 7, 10].map(n => (
                 <button
                   key={n}
                   type="button"

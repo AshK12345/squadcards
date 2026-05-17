@@ -10,7 +10,7 @@ export const PIPS = { common: 1, uncommon: 2, rare: 3, legendary: 4, secret: 5 }
 
 export const RARITY_ORDER = { common: 0, uncommon: 1, rare: 2, legendary: 3, secret: 4 };
 
-export const MIN_PACK = 5;
+export const MIN_PACK = 1;
 
 export const RARITY_PULL_RATES = {
   common: '70%',
