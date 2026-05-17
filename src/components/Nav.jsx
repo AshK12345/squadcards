@@ -1,8 +1,9 @@
 export default function Nav({ activeView, onViewChange }) {
   const tabs = [
-    { id: 'create',     label: '✏️ Create'     },
-    { id: 'collection', label: '📦 Collection' },
-    { id: 'packs',      label: '💥 Packs'      },
+    { id: 'create',     label: '✏️ Create' },
+    { id: 'collection', label: '📦 Cards'  },
+    { id: 'packs',      label: '💥 Packs'  },
+    { id: 'trades',     label: '🤝 Trade'  },
   ];
 
   return (

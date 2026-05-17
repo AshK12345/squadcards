@@ -4,28 +4,32 @@ import Toast from './components/Toast';
 import CreateView from './views/CreateView';
 import CollectionView from './views/CollectionView';
 import PacksView from './views/PacksView';
+import TradesView from './views/TradesView';
 import { useCards } from './hooks/useCards';
 import { useDeviceId } from './hooks/useDeviceId';
 import { fetchSharedPack } from './utils/share';
 
 export default function App() {
   const [activeView, setActiveView]   = useState('create');
-  const { cards, loading, addCard, removeCard } = useCards();
+  const { cards, loading, addCard, removeCard, reloadCards } = useCards();
   const deviceId                       = useDeviceId();
   const [toast, setToast]             = useState({ msg: '', key: 0 });
   const [currentPack, setCurrentPack] = useState(null);
   const [incomingPack, setIncomingPack] = useState(null);
+  const [incomingTradeId, setIncomingTradeId] = useState(null);
 
-  // Detect shared pack in URL hash on load
+  // Detect shared pack or trade in URL hash on load
   useEffect(() => {
-    const match = window.location.hash.match(/[#&]pack=([^&]+)/);
-    if (!match) return;
-    fetchSharedPack(match[1]).then(packData => {
-      if (packData) {
-        setIncomingPack(packData);
-        setActiveView('packs');
-      }
-    });
+    const packMatch  = window.location.hash.match(/[#&]pack=([^&]+)/);
+    const tradeMatch = window.location.hash.match(/[#&]trade=([^&]+)/);
+    if (packMatch) {
+      fetchSharedPack(packMatch[1]).then(packData => {
+        if (packData) { setIncomingPack(packData); setActiveView('packs'); }
+      });
+    } else if (tradeMatch) {
+      setIncomingTradeId(tradeMatch[1]);
+      setActiveView('trades');
+    }
   }, []);
 
   const showToast = useCallback((msg) => {
@@ -63,6 +67,15 @@ export default function App() {
           incomingPack={incomingPack}
           setIncomingPack={setIncomingPack}
           showToast={showToast}
+        />
+        <TradesView
+          active={activeView === 'trades'}
+          collection={cards}
+          deviceId={deviceId}
+          reloadCards={reloadCards}
+          showToast={showToast}
+          incomingTradeId={incomingTradeId}
+          clearIncomingTrade={() => setIncomingTradeId(null)}
         />
       </div>
       <Toast message={toast.msg} toastKey={toast.key} />

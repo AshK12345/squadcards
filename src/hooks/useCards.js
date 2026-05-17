@@ -104,5 +104,13 @@ export function useCards() {
     }
   }, []);
 
-  return { cards, loading, addCard, removeCard };
+  /* ── reload cards (e.g. after a trade completes) ── */
+  const reloadCards = useCallback(async () => {
+    if (!SUPABASE_ENABLED || !deviceId) return;
+    const { data, error } = await supabase
+      .from('cards').select('*').eq('device_id', deviceId).order('created_at');
+    if (!error && data) setCards(data.map(dbToCard));
+  }, [deviceId]);
+
+  return { cards, loading, addCard, removeCard, reloadCards };
 }
