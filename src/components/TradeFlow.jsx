@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { acceptTrade } from '../utils/trade';
 import CardFrame from './CardFrame';
+import { HP_MAP } from '../constants';
 
 const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
 const FLIP_HALF = 200;
@@ -79,14 +80,16 @@ export default function TradeFlow({ trade, myCollection, myDeviceId, onDone, onC
                   {eligible.length === 0 ? (
                     <p className="trf-empty">You have no cards to trade.</p>
                   ) : (
-                    <div className="trf-card-list">
-                      {eligible.map((c, i) => (
+                    <div className="trd-card-list-rows">
+                      {eligible.map((c) => (
                         <div
                           key={c.id}
-                          className={`trf-card-option rarity-${c.rarity} ${selected?.id === c.id ? 'trf-selected' : ''}`}
+                          className={`trd-card-row rarity-${c.rarity} ${selected?.id === c.id ? 'trd-row-selected' : ''}`}
                           onClick={() => setSelected(c)}
                         >
-                          <CardFrame card={c} index={i} noTilt />
+                          <div className="trd-row-dot" />
+                          <span className="trd-row-name">{c.name}</span>
+                          <span className="trd-row-hp">{HP_MAP[c.rarity]}</span>
                         </div>
                       ))}
                     </div>
@@ -98,7 +101,7 @@ export default function TradeFlow({ trade, myCollection, myDeviceId, onDone, onC
                       onClick={confirmTrade}
                       type="button"
                     >
-                      🤝 Trade {selected.name} for {initCard.name}
+                      🤝 Trade {selected.name} → {initCard.name}
                     </button>
                   )}
                 </div>

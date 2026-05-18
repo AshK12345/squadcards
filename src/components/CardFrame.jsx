@@ -129,12 +129,15 @@ export default function CardFrame({ card, index, noTilt = false }) {
           </div>
         </div>
 
-        <div className="card-footer">
-          <div className="rarity-pip">
-            {Array.from({ length: pipCount }).map((_, i) => <div key={i} className="pip" />)}
+        <div className="card-footer-group">
+          <div className="card-overbar" />
+          <div className="card-footer">
+            <div className="rarity-pip">
+              {Array.from({ length: pipCount }).map((_, i) => <div key={i} className="pip" />)}
+            </div>
+            <div className="card-set-stamp">SC</div>
+            <div className="card-number">#{String((index ?? 0) + 1).padStart(3, '0')}</div>
           </div>
-          <div className="card-set-stamp">SC</div>
-          <div className="card-number">#{String((index ?? 0) + 1).padStart(3, '0')}</div>
         </div>
       </div>
     </div>

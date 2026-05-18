@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createTrade, fetchTrade, cancelTrade, subscribeTrade } from '../utils/trade';
-import CardFrame from '../components/CardFrame';
 import TradeFlow from '../components/TradeFlow';
 import { SUPABASE_ENABLED } from '../lib/supabase';
+import { HP_MAP } from '../constants';
 
 const LS_KEY = 'sc-pending-trade';
 
@@ -134,14 +134,16 @@ export default function TradesView({
             ) : (
               <>
                 <p className="trade-section-label">Your card to offer:</p>
-                <div className="trd-picker-grid">
-                  {eligibleCards.map((c, i) => (
+                <div className="trd-card-list-rows">
+                  {eligibleCards.map((c) => (
                     <div
                       key={c.id}
-                      className={`trd-picker-cell rarity-${c.rarity} ${picked?.id === c.id ? 'trd-selected' : ''}`}
+                      className={`trd-card-row rarity-${c.rarity} ${picked?.id === c.id ? 'trd-row-selected' : ''}`}
                       onClick={() => setPicked(c)}
                     >
-                      <CardFrame card={c} index={i} noTilt />
+                      <div className="trd-row-dot" />
+                      <span className="trd-row-name">{c.name}</span>
+                      <span className="trd-row-hp">{HP_MAP[c.rarity]}</span>
                     </div>
                   ))}
                 </div>
