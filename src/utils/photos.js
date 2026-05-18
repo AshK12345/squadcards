@@ -21,10 +21,24 @@ async function compressImage(dataUrl, maxWidth = 360, quality = 0.72) {
 }
 
 /**
+ * Check if a URL loads without errors by loading it in an Image element.
+ * Unlike a fetch/HEAD request, image loads are not subject to CORS restrictions.
+ */
+function imageUrlWorks(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload  = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+}
+
+/**
  * Upload a base64 data-URL photo to Supabase Storage.
- * Returns the public URL if the bucket is accessible, otherwise falls back to
- * a compressed data-URL stored directly in the DB (~30-60 KB).
- * Returns null if no photo was provided.
+ * Returns the public CDN URL if the bucket is publicly accessible,
+ * otherwise falls back to a compressed data-URL stored directly in the DB.
+ * This ensures photos always persist across page refreshes regardless of
+ * Supabase Storage bucket configuration.
  */
 export async function uploadPhoto(dataUrl, deviceId) {
   if (!supabase || !dataUrl?.startsWith('data:')) return null;
@@ -46,17 +60,16 @@ export async function uploadPhoto(dataUrl, deviceId) {
 
     const { data } = supabase.storage.from('card-photos').getPublicUrl(path);
 
-    // Verify the public URL actually loads (bucket may not be public)
-    try {
-      const check = await fetch(data.publicUrl, { method: 'HEAD' });
-      if (check.ok) return data.publicUrl;
-    } catch { /* fall through */ }
+    // Verify the CDN URL actually serves the image.
+    // Image loads bypass CORS so this works even for cross-origin Supabase buckets.
+    const ok = await imageUrlWorks(data.publicUrl);
+    if (ok) return data.publicUrl;
 
-    // Storage URL not accessible — store compressed data-URL in the DB instead
-    console.warn('card-photos bucket may not be public; storing compressed data-URL in DB.');
+    // Bucket not publicly accessible — store the compressed data-URL in the DB instead
+    console.warn('card-photos bucket may not be public; storing photo as data-URL.');
     return compressed;
   } catch (e) {
-    console.warn('Photo upload failed — storing compressed data-URL:', e.message);
+    console.warn('Photo upload to storage failed — storing photo as data-URL:', e.message);
     return compressed;
   }
 }
