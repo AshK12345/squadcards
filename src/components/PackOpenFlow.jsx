@@ -2,6 +2,9 @@ import { useState, useRef } from 'react';
 import CardFrame from './CardFrame';
 import { RARITY_ORDER } from '../constants';
 
+// navigator.vibrate is Android Chrome only; silently no-ops on iOS/desktop
+const vibrate = (pattern) => navigator.vibrate?.(pattern);
+
 const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
 const BURST_DURATION = { uncommon: 950, rare: 1500, legendary: 1600, secret: 1600 };
 const FLIP_HALF = 200; // ms per half of the flip
@@ -37,6 +40,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
   const openPack = () => {
     if (phase !== 'ready') return;
     triggerFlash();
+    vibrate([30, 40, 80]); // short-pause-long rip feel
     setPhase('tearing');
     setTimeout(() => {
       setPhase('stack');
@@ -50,6 +54,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
     if (flipPhase !== 'back') return;
     // Phase 1: squeeze card back down to nothing
     setFlipPhase('closing');
+    vibrate(25); // tap on flip start
     // Midpoint: swap content, then expand showing card front
     setTimeout(() => {
       setFlipPhase('opening');
@@ -57,6 +62,14 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
       if (BURST_RARITIES.has(card.rarity)) {
         setBurstRarity(card.rarity);
         setBurstKey(k => k + 1);
+        // Stronger rumble for rarer cards
+        if (card.rarity === 'secret' || card.rarity === 'legendary') {
+          vibrate([60, 30, 60, 30, 120]);
+        } else if (card.rarity === 'rare') {
+          vibrate([40, 20, 80]);
+        } else {
+          vibrate(50); // uncommon
+        }
         setTimeout(() => setBurstRarity(null), BURST_DURATION[card.rarity] ?? 1000);
       }
     }, FLIP_HALF);
