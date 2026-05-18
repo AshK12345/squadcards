@@ -109,8 +109,9 @@ export default function CardFrame({ card, index, noTilt = false }) {
 
         <div className="card-img-wrap">
           {card.photo
-            ? <img src={card.photo} alt={card.name} />
-            : <div className="card-img-placeholder">👤</div>}
+            ? <img src={card.photo} alt={card.name} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }} />
+            : null}
+          <div className="card-img-placeholder" style={card.photo ? { display: 'none' } : {}}>👤</div>
         </div>
 
         <div className="card-type-line">{card.type}</div>
