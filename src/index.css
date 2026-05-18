@@ -2089,31 +2089,93 @@ body::before {
   z-index: 3;
 }
 
-/* Departing card: squish then rocket right */
-.ta-depart {
-  animation: taDepart 0.9s cubic-bezier(0.55, 0, 0.8, 0.3) forwards;
+/* ── 1f SPIROGRAPH FRISBEE DEPARTURE ──────────────────────────────── */
+
+/* Position wrapper: translate + scale + opacity (no rotation) */
+.ta-frisbee-pos {
+  animation: taFrisbeePos 0.9s linear forwards;
 }
-@keyframes taDepart {
-  0%   { transform: translate(0, 0)       scaleX(1)    scaleY(1); opacity: 1; }
-  30%  { transform: translate(0, 8px)     scaleX(1.28) scaleY(0.62); opacity: 1; }
-  55%  { transform: translate(0, 8px)     scaleX(1.28) scaleY(0.62); opacity: 1; }
-  100% { transform: translate(170vw, 8px) scaleX(0.9)  scaleY(0.62); opacity: 0; }
+/* Spin wrapper: rotation only — single cubic bezier so no stutter */
+.ta-frisbee-spin {
+  position: relative;
+  width: 230px; height: 356px;
+  animation: taFrisbeeSpin 0.9s linear forwards;
+}
+/* Spirograph SVG: inside spin element, fades in at release and lingers */
+.ta-spiro-svg {
+  position: absolute; top: 0; left: 0;
+  width: 230px; height: 356px;
+  overflow: visible; pointer-events: none;
+  opacity: 0;
+  animation: taSpiroFade 0.9s linear forwards;
 }
 
-/* Arriving card: hurled from top-left, bounces chaotically, settles at center */
+@keyframes taFrisbeePos {
+  /* Windup: pull left, compress/stretch */
+  0%   { transform: translate(0,0) scaleX(1) scaleY(1); opacity:1;
+         animation-timing-function: cubic-bezier(0.55,0,0.85,0.18); }
+  8%   { transform: translate(-24px,6px) scaleX(0.80) scaleY(1.26); opacity:1;
+         animation-timing-function: cubic-bezier(0.1,0,0.35,1); }
+  18%  { transform: translate(-66px,10px) scaleX(0.54) scaleY(1.62); opacity:1; }
+  24%  { transform: translate(-66px,10px) scaleX(0.54) scaleY(1.62); opacity:1;
+         animation-timing-function: cubic-bezier(0.97,0,1,1); }
+  /* Snap to release + flight */
+  33%  { transform: translate(-4px,0) scaleX(1) scaleY(1); opacity:1;
+         animation-timing-function: linear; }
+  55%  { transform: translate(280px,-55px) scaleX(1) scaleY(1); opacity:1;
+         animation-timing-function: linear; }
+  75%  { transform: translate(560px,-90px) scaleX(0.80) scaleY(0.80); opacity:0.55;
+         animation-timing-function: linear; }
+  90%  { transform: translate(780px,-108px) scaleX(0.45) scaleY(0.45); opacity:0; }
+  100% { transform: translate(820px,-112px) scaleX(0.45) scaleY(0.45); opacity:0; }
+}
+
+@keyframes taFrisbeeSpin {
+  /* Windup tilt: rotateX (nose-up) + rotateZ (lean back) */
+  0%   { transform: perspective(800px) rotateX(0deg)   rotateZ(0deg); }
+  8%   { transform: perspective(800px) rotateX(-14deg) rotateZ(-12deg); }
+  18%  { transform: perspective(800px) rotateX(-30deg) rotateZ(-26deg); }
+  24%  { transform: perspective(800px) rotateX(-30deg) rotateZ(-26deg); }
+  30%  { transform: perspective(800px) rotateX(-8deg)  rotateZ(0deg); }
+  /* Release: single cubic bezier → smooth fast spin, no per-keyframe restart */
+  33%  { transform: perspective(800px) rotateX(-12deg) rotateZ(0deg);
+         animation-timing-function: cubic-bezier(0.06,0.65,0.85,0.9); }
+  90%  { transform: perspective(800px) rotateX(-28deg) rotateZ(1080deg); }
+  100% { transform: perspective(800px) rotateX(-28deg) rotateZ(1104deg); }
+}
+
+@keyframes taSpiroFade {
+  0%,30%  { opacity: 0; }
+  36%     { opacity: 1; }
+  70%     { opacity: 0.55; }
+  88%     { opacity: 0.20; }
+  95%     { opacity: 0; }
+  100%    { opacity: 0; }
+}
+
+/* ── 2b IMPACT SQUISH ARRIVAL ──────────────────────────────────────── */
+/* Arriving card: hurls in from top-right, squishes on each wall-hit, settles */
 .ta-bounce {
-  animation: taBounce 2.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: taBounce 2.2s linear forwards;
 }
 @keyframes taBounce {
-  0%   { transform: translate(-120vw, -130vh) rotate(-28deg); opacity: 0; }
-  12%  { opacity: 1; }
-  22%  { transform: translate(38vw,  22vh)  rotate(14deg); }
-  38%  { transform: translate(-28vw, -18vh) rotate(-9deg); }
-  52%  { transform: translate(22vw,  30vh)  rotate(7deg);  }
-  65%  { transform: translate(-14vw, -12vh) rotate(-4deg); }
-  78%  { transform: translate(10vw,  8vh)   rotate(2deg);  }
-  88%  { transform: translate(-5vw,  -4vh)  rotate(-1deg); }
-  100% { transform: translate(0, 0)         rotate(0deg);  opacity: 1; }
+  0%   { transform: translate(55vw,-50vh) rotate(-30deg) scaleX(1) scaleY(1); opacity:0;
+         animation-timing-function: cubic-bezier(0.55,0,1,0.45); }
+  5%   { opacity:1; animation-timing-function: cubic-bezier(0.55,0,1,0.45); }
+  22%  { transform: translate(217px,159px) rotate(-16deg) scaleX(1.56) scaleY(0.50);
+         animation-timing-function: cubic-bezier(0,0,0.12,1); }
+  27%  { transform: translate(210px,147px) rotate(-14deg) scaleX(1) scaleY(1);
+         animation-timing-function: cubic-bezier(0.6,0,1,0.4); }
+  47%  { transform: translate(-242px,-115px) rotate(12deg) scaleX(1.42) scaleY(0.56);
+         animation-timing-function: cubic-bezier(0,0,0.12,1); }
+  52%  { transform: translate(-233px,-102px) rotate(10deg) scaleX(1) scaleY(1);
+         animation-timing-function: cubic-bezier(0.6,0,1,0.4); }
+  69%  { transform: translate(115px,185px) rotate(-4deg) scaleX(1.26) scaleY(0.70);
+         animation-timing-function: cubic-bezier(0,0,0.12,1); }
+  73%  { transform: translate(109px,176px) rotate(-3deg) scaleX(1) scaleY(1);
+         animation-timing-function: cubic-bezier(0.3,0,0.4,1); }
+  90%  { transform: translate(0,0) rotate(0deg) scaleX(1) scaleY(1); opacity:1; }
+  100% { transform: translate(0,0) rotate(0deg) scaleX(1) scaleY(1); opacity:1; }
 }
 
 /* Result footer: upgrade badge + button */
