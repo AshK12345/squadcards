@@ -1,232 +1,387 @@
 import { useState, useEffect, useRef } from 'react';
-import { createTrade, fetchTrade, cancelTrade, subscribeTrade } from '../utils/trade';
-import TradeFlow from '../components/TradeFlow';
+import {
+  createLobby, joinLobby, setRecipientCard,
+  setReady, executeTrade, claimCard, cancelLobby,
+  fetchTrade, subscribeTrade,
+} from '../utils/trade';
+import CardFrame from '../components/CardFrame';
 import { SUPABASE_ENABLED } from '../lib/supabase';
 import { HP_MAP } from '../constants';
 
 const LS_KEY = 'sc-pending-trade';
+const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
 
 export default function TradesView({
   active, collection, deviceId, reloadCards,
   showToast, incomingTradeId, clearIncomingTrade,
 }) {
-  const [phase, setPhase]             = useState('idle'); // idle | pending | done
-  const [pendingTrade, setPendingTrade] = useState(null);
-  const [tradeUrl, setTradeUrl]       = useState('');
-  const [picked, setPicked]           = useState(null);
-  const [copied, setCopied]           = useState(false);
-  const [receivedName, setReceivedName] = useState('');
-  const [incomingTrade, setIncomingTrade] = useState(null);
-  const subRef = useRef(null);
+  const [phase, setPhase]           = useState('home');
+  const [role, setRole]             = useState(null);
+  const [trade, setTrade]           = useState(null);
+  const [myCard, setMyCard]         = useState(null);
+  const [picked, setPicked]         = useState(null);
+  const [joinCode, setJoinCode]     = useState('');
+  const [myReady, setMyReady]       = useState(false);
+  const [theirReady, setTheirReady] = useState(false);
+  const [roomUrl, setRoomUrl]       = useState('');
+  const [copied, setCopied]         = useState(false);
+  const [result, setResult]         = useState(null);
+  const [burstKey, setBurstKey]     = useState(0);
 
-  // Stable ref so subscription callback always sees latest state/fns
-  const onTradeUpdateRef = useRef(null);
-  onTradeUpdateRef.current = async (trade) => {
-    if (trade.status === 'completed') {
-      localStorage.removeItem(LS_KEY);
-      if (subRef.current) { subRef.current.unsubscribe(); subRef.current = null; }
+  const subRef     = useRef(null);
+  const claimedRef = useRef(false);
+  const roleRef    = useRef(null);
+  const tradeIdRef = useRef(null);
+
+  /* ── helpers ── */
+  const resetToHome = () => {
+    subRef.current?.unsubscribe();
+    subRef.current  = null;
+    claimedRef.current = false;
+    roleRef.current = null;
+    tradeIdRef.current = null;
+    localStorage.removeItem(LS_KEY);
+    setPhase('home'); setRole(null); setTrade(null);
+    setMyCard(null); setPicked(null); setMyReady(false);
+    setTheirReady(false); setResult(null);
+  };
+
+  /* ── Realtime handler (via ref so it always captures latest state) ── */
+  const onUpdateRef = useRef(null);
+  onUpdateRef.current = async (updated) => {
+    const myRole = roleRef.current;
+    if (!myRole) return;
+
+    setTrade(updated);
+
+    if (updated.status === 'cancelled') {
+      showToast('Trade was cancelled.');
+      resetToHome(); return;
+    }
+
+    if (updated.status === 'matched') {
+      setMyReady(myRole === 'initiator' ? updated.initiator_ready : updated.recipient_ready);
+      setTheirReady(myRole === 'initiator' ? updated.recipient_ready : updated.initiator_ready);
+
+      if (updated.initiator_ready && updated.recipient_ready) {
+        // Race — only one client wins the executeTrade update
+        executeTrade(updated);
+      }
+    }
+
+    if (updated.status === 'completed') {
+      if (claimedRef.current) return;
+      claimedRef.current = true;
+      const res = await claimCard(updated, myRole, deviceId);
       await reloadCards();
-      setReceivedName(trade.recipient_card_snapshot?.name || 'a card');
-      setPendingTrade(null);
+      localStorage.removeItem(LS_KEY);
+      setResult(res);
+      if (res.upgraded && BURST_RARITIES.has(res.newRarity)) setBurstKey(k => k + 1);
       setPhase('done');
       showToast('🤝 Trade complete!');
-    } else if (trade.status === 'cancelled') {
-      localStorage.removeItem(LS_KEY);
-      if (subRef.current) { subRef.current.unsubscribe(); subRef.current = null; }
-      setPendingTrade(null);
-      setPhase('idle');
     }
   };
 
-  // Restore pending trade from localStorage on mount
-  useEffect(() => {
-    const savedId = localStorage.getItem(LS_KEY);
-    if (!savedId || !deviceId) return;
-    fetchTrade(savedId).then(trade => {
-      if (!trade || trade.status !== 'pending' || trade.initiator_device_id !== deviceId) {
-        localStorage.removeItem(LS_KEY); return;
-      }
-      setPendingTrade(trade);
-      setTradeUrl(`${window.location.origin}${window.location.pathname}#trade=${trade.id}`);
-      setPhase('pending');
-      subRef.current = subscribeTrade(trade.id, t => onTradeUpdateRef.current(t));
-    });
-  }, [deviceId]);
-
-  // Incoming trade link
-  useEffect(() => {
-    if (!incomingTradeId) return;
-    fetchTrade(incomingTradeId).then(trade => {
-      if (!trade) { showToast('Trade not found or already completed.'); return; }
-      if (trade.status !== 'pending') { showToast('This trade is no longer available.'); return; }
-      setIncomingTrade(trade);
-    });
-  }, [incomingTradeId]);
-
-  // Cleanup subscription on unmount
-  useEffect(() => () => { if (subRef.current) subRef.current.unsubscribe(); }, []);
-
-  const offerTrade = async () => {
-    if (!picked) return;
-    const { trade, url, error } = await createTrade(picked, deviceId);
-    if (error) { showToast('Could not create trade: ' + error); return; }
-    localStorage.setItem(LS_KEY, trade.id);
-    setPendingTrade(trade);
-    setTradeUrl(url);
-    setPhase('pending');
-    subRef.current = subscribeTrade(trade.id, t => onTradeUpdateRef.current(t));
-    showToast('Trade offer created!');
+  const subscribe = (tradeId) => {
+    subRef.current?.unsubscribe();
+    subRef.current = subscribeTrade(tradeId, t => onUpdateRef.current(t));
+    tradeIdRef.current = tradeId;
   };
 
-  const handleCancel = async () => {
-    if (!pendingTrade) return;
-    await cancelTrade(pendingTrade.id);
-    localStorage.removeItem(LS_KEY);
-    if (subRef.current) { subRef.current.unsubscribe(); subRef.current = null; }
-    setPendingTrade(null); setPicked(null); setPhase('idle');
-    showToast('Trade cancelled.');
+  /* ── Restore pending lobby from localStorage ── */
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_KEY);
+    if (!saved || !deviceId) return;
+    try {
+      const { tradeId, role: savedRole } = JSON.parse(saved);
+      fetchTrade(tradeId).then(t => {
+        if (!t) { localStorage.removeItem(LS_KEY); return; }
+        if (t.status === 'completed') { localStorage.removeItem(LS_KEY); return; }
+        if (!['waiting', 'matched'].includes(t.status)) { localStorage.removeItem(LS_KEY); return; }
+        roleRef.current = savedRole;
+        setRole(savedRole);
+        setTrade(t);
+        setMyCard(savedRole === 'initiator' ? t.initiator_card_snapshot : t.recipient_card_snapshot);
+        setMyReady(savedRole === 'initiator' ? t.initiator_ready : t.recipient_ready);
+        setTheirReady(savedRole === 'initiator' ? t.recipient_ready : t.initiator_ready);
+        if (savedRole === 'initiator') setRoomUrl(`${window.location.origin}${window.location.pathname}#trade=${t.room_code}`);
+        setPhase('lobby');
+        subscribe(tradeId);
+      });
+    } catch { localStorage.removeItem(LS_KEY); }
+  }, [deviceId]);
+
+  /* ── Handle incoming room code from URL ── */
+  useEffect(() => {
+    if (!incomingTradeId) return;
+    setJoinCode(incomingTradeId.toUpperCase());
+    setPhase('joining');
+    clearIncomingTrade();
+    if (window.location.hash.includes('trade='))
+      window.history.replaceState(null, '', window.location.pathname);
+  }, [incomingTradeId]);
+
+  useEffect(() => () => subRef.current?.unsubscribe(), []);
+
+  /* ── Actions ── */
+  const startTrade = async () => {
+    if (!picked) return;
+    const res = await createLobby(picked, deviceId);
+    if (res.error) { showToast('Could not create lobby: ' + res.error); return; }
+    roleRef.current = 'initiator';
+    setRole('initiator'); setTrade(res.trade); setMyCard(picked);
+    setRoomUrl(res.url);
+    localStorage.setItem(LS_KEY, JSON.stringify({ tradeId: res.trade.id, role: 'initiator' }));
+    subscribe(res.trade.id);
+    setPhase('lobby');
+  };
+
+  const joinTrade = async () => {
+    const code = joinCode.trim().toUpperCase();
+    if (code.length < 6) return;
+    const res = await joinLobby(code, deviceId);
+    if (res.error === 'self') { showToast("That's your own lobby!"); return; }
+    if (res.error) { showToast(res.error); return; }
+    roleRef.current = 'recipient';
+    setRole('recipient'); setTrade(res.trade);
+    setTheirReady(res.trade.initiator_ready);
+    localStorage.setItem(LS_KEY, JSON.stringify({ tradeId: res.trade.id, role: 'recipient' }));
+    subscribe(res.trade.id);
+    setPhase('lobby');
+  };
+
+  const pickRecipientCard = async (card) => {
+    if (role !== 'recipient' || !trade) return;
+    setMyCard(card);
+    await setRecipientCard(trade.id, card);
+  };
+
+  const handleReady = async () => {
+    if (!trade || myReady) return;
+    setMyReady(true);
+    const updated = await setReady(trade.id, role);
+    if (!updated) return;
+    setTrade(updated);
+    if (updated.initiator_ready && updated.recipient_ready && updated.status === 'matched') {
+      executeTrade(updated); // race — winner triggers Realtime 'completed'
+    }
+  };
+
+  const handleLeave = async () => {
+    if (trade) await cancelLobby(trade.id);
+    resetToHome();
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(tradeUrl).then(() => {
+    navigator.clipboard.writeText(roomUrl).then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 2000);
     });
   };
 
-  const handleTradeDone = async () => {
-    setIncomingTrade(null);
-    clearIncomingTrade();
-    await reloadCards();
-    if (window.location.hash.includes('trade=')) {
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-  };
+  /* ── Derived ── */
+  const theirCard     = trade ? (role === 'initiator' ? trade.recipient_card_snapshot : trade.initiator_card_snapshot) : null;
+  const partnerJoined = trade?.status === 'matched';
+  const canReady      = partnerJoined && (role === 'initiator' || !!myCard) && !myReady;
+  const eligible      = collection.filter(c => !String(c.id).startsWith('temp-'));
 
   if (!SUPABASE_ENABLED) {
     return (
       <div className={`view ${active ? 'active' : ''}`} id="view-trades">
-        <div className="trade-area">
-          <p style={{ color: '#888', fontSize: 13, textAlign: 'center' }}>
-            Trading requires a Supabase connection.
-          </p>
-        </div>
+        <div className="trade-area"><p style={{ color: '#888', textAlign: 'center' }}>Trading requires Supabase.</p></div>
       </div>
     );
   }
-
-  const eligibleCards = collection.filter(c => !String(c.id).startsWith('temp-'));
 
   return (
     <div className={`view ${active ? 'active' : ''}`} id="view-trades">
       <div className="trade-area">
 
-        {/* ── IDLE: pick a card to offer ── */}
-        {phase === 'idle' && (
+        {/* ── HOME ── */}
+        {phase === 'home' && (
           <div className="pack-builder">
-            <h3>🤝 Offer a Trade</h3>
+            <h3>🤝 Trade Cards</h3>
             <p className="trade-desc">
-              Pick one card to offer. Your partner picks one back.
-              There's a <strong>15%</strong> chance either card gets a rarity upgrade on delivery.
+              Create a lobby, share the code with your partner, pick your cards, and both hit Ready to swap.
+              15% chance either card gets a rarity upgrade on delivery.
             </p>
+            <button className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center', marginBottom: 10 }}
+              onClick={() => setPhase('picking')} type="button">
+              Start a Trade
+            </button>
+            <button className="btn trd-cancel-btn"
+              onClick={() => setPhase('joining')} type="button">
+              Join a Trade
+            </button>
+          </div>
+        )}
 
-            {eligibleCards.length === 0 ? (
-              <p className="trade-empty-note">Save some cards first!</p>
+        {/* ── PICKING (initiator) ── */}
+        {phase === 'picking' && (
+          <div className="pack-builder">
+            <button className="trade-back-btn" onClick={() => { setPhase('home'); setPicked(null); }}>← Back</button>
+            <h3 style={{ marginBottom: 6 }}>Pick your card</h3>
+            <p className="trade-desc">Choose what you're putting up for trade.</p>
+            {eligible.length === 0 ? (
+              <p className="trade-empty-note">Add some cards first!</p>
             ) : (
+              <div className="trd-card-list-rows">
+                {eligible.map(c => (
+                  <div key={c.id}
+                    className={`trd-card-row rarity-${c.rarity} ${picked?.id === c.id ? 'trd-row-selected' : ''}`}
+                    onClick={() => setPicked(c)}>
+                    <div className="trd-row-dot" />
+                    <span className="trd-row-name">{c.name}</span>
+                    <span className="trd-row-hp">{HP_MAP[c.rarity]}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={startTrade} disabled={!picked} type="button">
+              {picked ? `Create Lobby with "${picked.name}" 🤝` : 'Select a card above'}
+            </button>
+          </div>
+        )}
+
+        {/* ── JOINING (recipient) ── */}
+        {phase === 'joining' && (
+          <div className="pack-builder">
+            <button className="trade-back-btn" onClick={() => { setPhase('home'); setJoinCode(''); }}>← Back</button>
+            <h3 style={{ marginBottom: 6 }}>Join a Trade</h3>
+            <p className="trade-desc">Enter the 6-character room code your partner shared.</p>
+            <input
+              className="form-input"
+              placeholder="ABCD12"
+              value={joinCode}
+              onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
+              autoCapitalize="characters"
+              style={{ letterSpacing: 8, fontFamily: 'Fredoka One, sans-serif', fontSize: 24, textAlign: 'center', marginBottom: 14 }}
+            />
+            <button className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={joinTrade} disabled={joinCode.length < 6} type="button">
+              Join →
+            </button>
+          </div>
+        )}
+
+        {/* ── LOBBY ── */}
+        {phase === 'lobby' && trade && (
+          <div className="pack-builder">
+            <div className="trade-lobby-header">
+              <button className="trade-back-btn" onClick={handleLeave}>← Leave</button>
+              <div className="trade-lobby-code-row">
+                <span className="trade-lobby-code">{trade.room_code}</span>
+                {role === 'initiator' && (
+                  <button className="btn btn-secondary" onClick={copyLink}
+                    style={{ padding: '4px 10px', fontSize: 11 }} type="button">
+                    {copied ? '✓ Copied' : 'Copy link'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Side-by-side mini cards */}
+            <div className="trade-lobby-sides">
+              <div className="trade-lobby-side">
+                <p className="trade-lobby-side-label">YOU</p>
+                {myCard ? (
+                  <div className="trade-mini-card">
+                    <CardFrame card={myCard} index={0} noTilt />
+                  </div>
+                ) : (
+                  <div className="trade-mini-slot trade-mini-waiting">
+                    <span className="trade-mini-label">Pick below</span>
+                  </div>
+                )}
+              </div>
+              <div className="trade-lobby-sides-divider">⇄</div>
+              <div className="trade-lobby-side">
+                <p className="trade-lobby-side-label">THEM</p>
+                {theirCard ? (
+                  <div className="trade-mini-card">
+                    <CardFrame card={theirCard} index={0} noTilt />
+                  </div>
+                ) : (
+                  <div className="trade-mini-slot trade-mini-waiting">
+                    <span className="trade-mini-label">
+                      {partnerJoined ? 'Picking...' : 'Waiting...'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recipient card picker */}
+            {role === 'recipient' && !myCard && (
               <>
-                <p className="trade-section-label">Your card to offer:</p>
+                <p className="trade-section-label" style={{ marginTop: 14 }}>Pick your card:</p>
                 <div className="trd-card-list-rows">
-                  {eligibleCards.map((c) => (
-                    <div
-                      key={c.id}
-                      className={`trd-card-row rarity-${c.rarity} ${picked?.id === c.id ? 'trd-row-selected' : ''}`}
-                      onClick={() => setPicked(c)}
-                    >
+                  {eligible.map(c => (
+                    <div key={c.id}
+                      className={`trd-card-row rarity-${c.rarity}`}
+                      onClick={() => pickRecipientCard(c)}>
                       <div className="trd-row-dot" />
                       <span className="trd-row-name">{c.name}</span>
                       <span className="trd-row-hp">{HP_MAP[c.rarity]}</span>
                     </div>
                   ))}
                 </div>
-                <button
-                  className="btn btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}
-                  onClick={offerTrade}
-                  disabled={!picked}
-                  type="button"
-                >
-                  {picked ? `Offer ${picked.name} 🤝` : 'Select a card above'}
-                </button>
               </>
             )}
-          </div>
-        )}
 
-        {/* ── PENDING: waiting for partner ── */}
-        {phase === 'pending' && pendingTrade && (
-          <div className="pack-builder">
-            <h3>Trade Pending ⏳</h3>
-            <p className="trade-desc">
-              Share this link with your trade partner. The trade completes the moment they accept.
-            </p>
-
-            <p className="trade-section-label" style={{ marginBottom: 8 }}>Your offer:</p>
-            <div className="trd-offer-preview">
-              <CardFrame card={pendingTrade.initiator_card_snapshot} index={0} noTilt />
+            {/* Ready indicators */}
+            <div className="trade-ready-status">
+              <span className={`trade-ready-pill ${myReady ? 'ready' : ''}`}>
+                You {myReady ? '✓' : '—'}
+              </span>
+              <span className={`trade-ready-pill ${theirReady ? 'ready' : ''}`}>
+                Them {!partnerJoined ? '—' : theirReady ? '✓' : '—'}
+              </span>
             </div>
 
-            <div className="trd-link-row">
-              <input className="form-input" readOnly value={tradeUrl} style={{ flex: 1, fontSize: 11 }} />
-              <button className="btn btn-secondary" onClick={copyLink} type="button" style={{ whiteSpace: 'nowrap' }}>
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-            </div>
-
-            <button
-              className="btn trd-cancel-btn"
-              onClick={handleCancel}
-              type="button"
-            >
-              Cancel Trade ✕
-            </button>
-          </div>
-        )}
-
-        {/* ── DONE: trade completed ── */}
-        {phase === 'done' && (
-          <div className="pack-builder" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 10 }}>🎉</div>
-            <h3>Trade Complete!</h3>
-            <p className="trade-desc">
-              You received <strong>{receivedName}</strong>. Check your collection!
-            </p>
             <button
               className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', marginTop: 16 }}
-              onClick={() => { setPhase('idle'); setPicked(null); }}
+              style={{ width: '100%', justifyContent: 'center', marginTop: 10 }}
+              onClick={handleReady}
+              disabled={!canReady}
               type="button"
             >
-              Trade Again 🤝
+              {myReady ? '⏳ Waiting for partner...' : '🤝 Ready'}
             </button>
           </div>
         )}
-      </div>
 
-      {/* ── Incoming trade overlay ── */}
-      {incomingTrade && (
-        <TradeFlow
-          trade={incomingTrade}
-          myCollection={eligibleCards}
-          myDeviceId={deviceId}
-          onDone={handleTradeDone}
-          onClose={() => {
-            setIncomingTrade(null);
-            clearIncomingTrade();
-            if (window.location.hash.includes('trade=')) {
-              window.history.replaceState(null, '', window.location.pathname);
-            }
-          }}
-        />
-      )}
+        {/* ── DONE ── */}
+        {phase === 'done' && result && (
+          <div className="pack-builder" style={{ textAlign: 'center' }}>
+            {result.upgraded && BURST_RARITIES.has(result.newRarity) && (
+              <div key={burstKey} className={`pof-reveal-burst pof-burst-${result.newRarity}`}
+                style={{ position: 'fixed', zIndex: 500, pointerEvents: 'none' }} />
+            )}
+            <div style={{ fontSize: 44, marginBottom: 10 }}>🎉</div>
+            <h3>{result.upgraded ? `⬆️ ${result.newRarity.toUpperCase()}!` : 'Trade Complete!'}</h3>
+            {result.upgraded && (
+              <p className="trade-desc" style={{ marginBottom: 4 }}>
+                {result.originalRarity} → {result.newRarity} — lucky upgrade!
+              </p>
+            )}
+            {result.newCard && (
+              <div style={{ margin: '16px auto', display: 'flex', justifyContent: 'center' }}>
+                <CardFrame card={result.newCard} index={0} noTilt />
+              </div>
+            )}
+            <button className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center', marginTop: 16 }}
+              onClick={resetToHome} type="button">
+              Sweet ✓
+            </button>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
