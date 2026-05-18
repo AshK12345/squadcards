@@ -1750,14 +1750,16 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
-  padding: 24px 16px;
-  max-height: 92vh;
+  height: 100%;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 60px 16px 40px;
+  box-sizing: border-box;
 }
 .trf-card-wrap {
-  width: min(260px, 76vw);
+  width: min(240px, 70vw);
   position: relative;
   flex-shrink: 0;
 }
@@ -1797,7 +1799,7 @@ body::before {
   -webkit-overflow-scrolling: touch;
 }
 .trf-card-option {
-  flex: 0 0 min(150px, 42vw);
+  flex: 0 0 min(130px, 38vw);
   cursor: pointer;
   border-radius: 12px;
   border: 3px solid transparent;
