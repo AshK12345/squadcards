@@ -2015,3 +2015,148 @@ body::before {
   width: 100%;
   justify-content: center;
 }
+
+/* ─── TRADE ANIMATION (full-screen Pokémon-style) ─── */
+.ta-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(0,180,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,180,255,0.07) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 40%, #0a1f4a 0%, #030d1e 100%);
+  background-size: 38px 38px, 38px 38px, 100% 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scanline flicker overlay */
+.ta-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,0.18) 3px,
+    rgba(0,0,0,0.18) 4px
+  );
+  animation: taScanMove 6s linear infinite;
+  z-index: 1;
+}
+@keyframes taScanMove {
+  from { background-position: 0 0; }
+  to   { background-position: 0 80px; }
+}
+
+/* "TRADE!" flash banner */
+.ta-title {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Fredoka One', sans-serif;
+  font-size: clamp(36px, 10vw, 64px);
+  color: #fff;
+  text-shadow:
+    0 0 12px rgba(0,220,255,0.9),
+    0 0 30px rgba(0,180,255,0.6),
+    2px 2px 0 #003a6e;
+  letter-spacing: 8px;
+  animation: taFlash 0.8s ease-out forwards;
+  z-index: 2;
+  white-space: nowrap;
+}
+@keyframes taFlash {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.6); }
+  30%  { opacity: 1; transform: translateX(-50%) scale(1.12); }
+  60%  { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
+}
+
+/* Card stage — centered anchor point */
+.ta-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 230px;
+  height: 356px;
+  margin-top: -178px;
+  margin-left: -115px;
+  z-index: 3;
+}
+
+/* Departing card: squish then rocket right */
+.ta-depart {
+  animation: taDepart 0.9s cubic-bezier(0.55, 0, 0.8, 0.3) forwards;
+}
+@keyframes taDepart {
+  0%   { transform: translate(0, 0)       scaleX(1)    scaleY(1); opacity: 1; }
+  30%  { transform: translate(0, 8px)     scaleX(1.28) scaleY(0.62); opacity: 1; }
+  55%  { transform: translate(0, 8px)     scaleX(1.28) scaleY(0.62); opacity: 1; }
+  100% { transform: translate(170vw, 8px) scaleX(0.9)  scaleY(0.62); opacity: 0; }
+}
+
+/* Arriving card: hurled from top-left, bounces chaotically, settles at center */
+.ta-bounce {
+  animation: taBounce 2.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes taBounce {
+  0%   { transform: translate(-120vw, -130vh) rotate(-28deg); opacity: 0; }
+  12%  { opacity: 1; }
+  22%  { transform: translate(38vw,  22vh)  rotate(14deg); }
+  38%  { transform: translate(-28vw, -18vh) rotate(-9deg); }
+  52%  { transform: translate(22vw,  30vh)  rotate(7deg);  }
+  65%  { transform: translate(-14vw, -12vh) rotate(-4deg); }
+  78%  { transform: translate(10vw,  8vh)   rotate(2deg);  }
+  88%  { transform: translate(-5vw,  -4vh)  rotate(-1deg); }
+  100% { transform: translate(0, 0)         rotate(0deg);  opacity: 1; }
+}
+
+/* Result footer: upgrade badge + button */
+.ta-result-footer {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 4;
+  animation: taFadeUp 0.35s ease-out forwards;
+}
+@keyframes taFadeUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.ta-upgrade-badge {
+  font-family: 'Fredoka One', sans-serif;
+  font-size: 18px;
+  color: #ffe94d;
+  text-shadow: 0 0 10px rgba(255,220,0,0.7), 1px 1px 0 #7a4c00;
+  letter-spacing: 1px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.ta-done-btn {
+  background: linear-gradient(135deg, #00cfff, #0057e7);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0,100,255,0.45);
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 0.1s;
+}
+.ta-done-btn:active { filter: brightness(0.9); }

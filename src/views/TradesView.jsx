@@ -5,6 +5,7 @@ import {
   fetchTrade, subscribeTrade,
 } from '../utils/trade';
 import CardFrame from '../components/CardFrame';
+import TradeAnimation from '../components/TradeAnimation';
 import { SUPABASE_ENABLED } from '../lib/supabase';
 import { HP_MAP } from '../constants';
 
@@ -77,7 +78,7 @@ export default function TradesView({
       localStorage.removeItem(LS_KEY);
       setResult(res);
       if (res.upgraded && BURST_RARITIES.has(res.newRarity)) setBurstKey(k => k + 1);
-      setPhase('done');
+      setPhase('animating');
       showToast('🤝 Trade complete!');
     }
   };
@@ -352,6 +353,18 @@ export default function TradesView({
               {myReady ? '⏳ Waiting for partner...' : '🤝 Ready'}
             </button>
           </div>
+        )}
+
+        {/* ── ANIMATING ── */}
+        {phase === 'animating' && result && (
+          <TradeAnimation
+            departingCard={myCard}
+            receivedCard={result.newCard}
+            upgraded={result.upgraded}
+            originalRarity={result.originalRarity}
+            newRarity={result.newRarity}
+            onComplete={resetToHome}
+          />
         )}
 
         {/* ── DONE ── */}
