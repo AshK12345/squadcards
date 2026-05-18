@@ -76,6 +76,7 @@ export default function StatsSection({ stats, onStatChange, name, type, photoSrc
                 <input
                   type="range"
                   className="stat-slider"
+                  style={{ '--fill': `${(s.val / 999) * 100}%` }}
                   min="0"
                   max="999"
                   step="1"

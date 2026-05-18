@@ -1,5 +1,7 @@
 // Vercel serverless function — proxies Anthropic API calls
 // The real API key lives here on the server, never exposed to the browser.
+export const config = { maxDuration: 30 }; // extend timeout beyond the 10s default
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });

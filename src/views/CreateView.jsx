@@ -14,6 +14,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
   const [rarity, setRarity] = useState('common');
   const [photoSrc, setPhotoSrc] = useState(null);
   const [stats, setStats] = useState(DEFAULT_STATS.map((s) => ({ ...s })));
+  const [aiKey, setAiKey] = useState(0); // increment to remount AIFlavor and clear chips
 
   const cardData = {
     name: name || 'Unknown',
@@ -41,6 +42,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
     setRarity('common');
     setPhotoSrc(null);
     setStats(DEFAULT_STATS.map((s) => ({ ...s })));
+    setAiKey(k => k + 1); // clear AI suggestion chips
   };
 
   return (
@@ -105,6 +107,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
                 maxLength={100}
               />
               <AIFlavor
+                key={aiKey}
                 name={name}
                 type={type}
                 rarity={rarity}
