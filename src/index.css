@@ -4,7 +4,11 @@
 
 body {
   font-family: 'Nunito', sans-serif;
-  background: #f5f0e8;
+  background-color: #f5f0e8;
+  /* Crosshatch + paper grain on top of the cream — color unchanged */
+  background-image:
+    repeating-linear-gradient( 30deg, rgba(0,0,0,0.038) 0, rgba(0,0,0,0.038) 1px, transparent 1px, transparent 18px),
+    repeating-linear-gradient(-30deg, rgba(0,0,0,0.028) 0, rgba(0,0,0,0.028) 1px, transparent 1px, transparent 18px);
   color: #1a1a1a;
   min-height: 100vh;
   overflow-x: hidden;
@@ -145,11 +149,11 @@ body::before {
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 160px 160px;
-  opacity: 0.065;
+  opacity: 0.11;
   mix-blend-mode: multiply;
 }
 
-/* Top-left light source + bottom shadow vignette */
+/* Top-left light source + bottom vignette + woven laminate layer */
 .card-frame::after {
   content: '';
   position: absolute;
@@ -158,8 +162,13 @@ body::before {
   z-index: 8;
   pointer-events: none;
   background:
-    linear-gradient(148deg, rgba(255,255,255,0.28) 0%, transparent 42%),
-    linear-gradient(to bottom, transparent 65%, rgba(0,0,0,0.07) 100%);
+    /* Top-left catch light (laminate gloss) */
+    linear-gradient(148deg, rgba(255,255,255,0.30) 0%, transparent 44%),
+    /* Bottom shadow vignette */
+    linear-gradient(to bottom, transparent 64%, rgba(0,0,0,0.08) 100%),
+    /* Woven laminate texture — very fine diagonal weave, mix-blend not needed here */
+    repeating-linear-gradient( 45deg, rgba(255,255,255,0.055) 0, rgba(255,255,255,0.055) 0.5px, transparent 0.5px, transparent 7px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.055) 0, rgba(255,255,255,0.055) 0.5px, transparent 0.5px, transparent 7px);
 }
 
 .card-header {
@@ -212,9 +221,57 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
+
+/* Halftone dot fringe — all 4 edges, fades toward the image center.
+   Radial gradient mask: transparent in the middle, opaque at all edges. */
+.card-img-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(30,18,6,0.52) 0.8px, transparent 0.8px);
+  background-size: 4px 4px;
+  /* farthest-corner ellipse → smoothly covers all 4 edges + corners.
+     Transparent center fades to visible at ~80% of the way to the edge. */
+  -webkit-mask-image: radial-gradient(
+    ellipse at 50% 50%,
+    transparent   0%,
+    transparent  68%,
+    rgba(0,0,0,0.18) 76%,
+    rgba(0,0,0,0.72) 88%,
+    rgba(0,0,0,0.85) 100%
+  );
+  mask-image: radial-gradient(
+    ellipse at 50% 50%,
+    transparent   0%,
+    transparent  68%,
+    rgba(0,0,0,0.18) 76%,
+    rgba(0,0,0,0.72) 88%,
+    rgba(0,0,0,0.85) 100%
+  );
+}
+
 .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
 .card-img-placeholder { font-size: 40px; }
+
+/* Per-card organic dye/print texture — SVG feTurbulence with unique seed per card name */
+.card-dye-dark,
+.card-dye-light {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 11px;
+  z-index: 7;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.card-dye-dark  { mix-blend-mode: multiply; }
+.card-dye-light { mix-blend-mode: screen; }
 
 .card-type-line {
   padding: 3px 10px;

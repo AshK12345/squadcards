@@ -3,14 +3,96 @@ import { HP_MAP, PIPS, fmtBi } from '../constants';
 
 const HOLO = new Set(['rare', 'legendary', 'secret']);
 
+// Deterministic seed from card name (FNV-1a hash) — drives unique dye pattern per card
+function dyeSeed(name = '') {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h % 32767; // feTurbulence seed max
+}
+
+// ── Per-card procedural print/dye texture ──────────────────────────────────
+// Two SVG feTurbulence layers (unique seed per card name):
+//   • dark layer (multiply) = heavier ink deposit in irregular blobs
+//   • light layer (screen)  = faded/lighter patches where dye didn't saturate
+// Together they create the mottled organic look of physical card printing.
+function CardDyeLayer({ seed }) {
+  const dId = `dd${seed}`;   // dark filter id
+  const lId = `dl${seed}`;   // light filter id
+  const lSeed = (seed * 11 + 7) % 32767; // different offset for the light pattern
+
+  return (
+    <>
+      {/* Heavier ink blobs — darkens small organic patches */}
+      <svg
+        className="card-dye-dark"
+        viewBox="0 0 230 356"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <defs>
+          <filter id={dId} x="0%" y="0%" width="100%" height="100%"
+            colorInterpolationFilters="sRGB">
+            {/* Large-scale fractal noise → organic blobs, not speckles */}
+            <feTurbulence type="fractalNoise"
+              baseFrequency="0.016 0.021"
+              numOctaves="4"
+              seed={seed}
+              result="n" />
+            {/* Push alpha values: most of the card stays transparent,
+                occasional peaks reach up to 14% opacity */}
+            <feComponentTransfer>
+              <feFuncR type="linear" slope="0" />
+              <feFuncG type="linear" slope="0" />
+              <feFuncB type="linear" slope="0" />
+              <feFuncA type="gamma" amplitude="0.14" exponent="2.2" offset="0" />
+            </feComponentTransfer>
+          </filter>
+        </defs>
+        <rect width="230" height="356" fill="black" filter={`url(#${dId})`} />
+      </svg>
+
+      {/* Faded / lighter dye patches — slightly lightens other regions */}
+      <svg
+        className="card-dye-light"
+        viewBox="0 0 230 356"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <defs>
+          <filter id={lId} x="0%" y="0%" width="100%" height="100%"
+            colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise"
+              baseFrequency="0.013 0.018"
+              numOctaves="3"
+              seed={lSeed}
+              result="n" />
+            <feComponentTransfer>
+              <feFuncR type="linear" slope="0" intercept="1" />
+              <feFuncG type="linear" slope="0" intercept="1" />
+              <feFuncB type="linear" slope="0" intercept="1" />
+              {/* Max 9% lightening — subtle faded-dye regions */}
+              <feFuncA type="gamma" amplitude="0.09" exponent="2.6" offset="0" />
+            </feComponentTransfer>
+          </filter>
+        </defs>
+        <rect width="230" height="356" fill="white" filter={`url(#${lId})`} />
+      </svg>
+    </>
+  );
+}
+
 export default function CardFrame({ card, index, noTilt = false }) {
   const wrapRef  = useRef(null);
   const frameRef = useRef(null);
   const holoRef  = useRef(null);
   const sparkRef = useRef(null);
 
-  const isHolo  = HOLO.has(card.rarity);
+  const isHolo   = HOLO.has(card.rarity);
   const pipCount = PIPS[card.rarity] ?? 1;
+  const seed     = dyeSeed(card.name);
 
   /* ── pointer tracking ── */
   const applyTilt = (clientX, clientY) => {
@@ -27,7 +109,6 @@ export default function CardFrame({ card, index, noTilt = false }) {
     frameRef.current.style.boxShadow  =
       `${-ry * 0.6 + 6}px ${rx * 0.4 + 6}px 24px rgba(0,0,0,0.35)`;
 
-    // Holographic gradient follows the pointer
     if (holoRef.current) {
       const angle = 110 + (x - 0.5) * 90;
       const shine = `radial-gradient(circle at ${x*100}% ${y*100}%,
@@ -70,7 +151,6 @@ export default function CardFrame({ card, index, noTilt = false }) {
 
   const onMouseMove = (e) => applyTilt(e.clientX, e.clientY);
 
-  // Non-passive touchmove so preventDefault actually stops page scroll while tilting
   const applyTiltRef = useRef(applyTilt);
   applyTiltRef.current = applyTilt;
   useEffect(() => {
@@ -94,6 +174,9 @@ export default function CardFrame({ card, index, noTilt = false }) {
       style={{ perspective: '550px' }}
     >
       <div className="card-frame" ref={frameRef}>
+
+        {/* ── Procedural print/dye texture (unique per card name) ── */}
+        <CardDyeLayer seed={seed} />
 
         {/* ── holographic layers (rare / legendary / secret only) ── */}
         {isHolo && <div className="holo-shimmer" />}
