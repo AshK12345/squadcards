@@ -3,14 +3,31 @@ import { HP_MAP, PIPS, fmtBi } from '../constants';
 
 const HOLO = new Set(['rare', 'legendary', 'secret']);
 
+// Deterministic fake serial number from card name (FNV-1a hash)
+function fakeSerial(name = '') {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h % 9999;
+}
+
+const PULL_RATE = {
+  common: '62.4%', uncommon: '21.8%', rare: '11.3%', legendary: '3.9%', secret: '0.6%',
+};
+
 export default function CardFrame({ card, index, noTilt = false }) {
   const wrapRef  = useRef(null);
   const frameRef = useRef(null);
   const holoRef  = useRef(null);
   const sparkRef = useRef(null);
 
-  const isHolo  = HOLO.has(card.rarity);
+  const isHolo   = HOLO.has(card.rarity);
   const pipCount = PIPS[card.rarity] ?? 1;
+  const serial   = fakeSerial(card.name);
+  const printRun = 9999 - (serial * 7) % 4000;
+  const pullRate = PULL_RATE[card.rarity] ?? '?%';
 
   /* ── pointer tracking ── */
   const applyTilt = (clientX, clientY) => {
@@ -135,8 +152,11 @@ export default function CardFrame({ card, index, noTilt = false }) {
             <div className="rarity-pip">
               {Array.from({ length: pipCount }).map((_, i) => <div key={i} className="pip" />)}
             </div>
-            <div className="card-set-stamp">SC</div>
+            <div className="card-set-stamp">SC·S1</div>
             <div className="card-number">#{String((index ?? 0) + 1).padStart(3, '0')}</div>
+          </div>
+          <div className="card-meta-line">
+            {String(serial).padStart(4,'0')}/{String(printRun).padStart(4,'0')} · PULL {pullRate}
           </div>
         </div>
       </div>
