@@ -32,7 +32,7 @@ export default function App() {
     const tradeMatch = window.location.hash.match(/[#&]trade=([^&]+)/);
     if (packMatch) {
       fetchSharedPack(packMatch[1]).then(packData => {
-        if (packData) { setIncomingPack(packData); setActiveView('packs'); }
+        if (packData) { setIncomingPack({ ...packData, packId: packMatch[1] }); setActiveView('packs'); }
       });
     } else if (tradeMatch) {
       setIncomingTradeId(tradeMatch[1]);

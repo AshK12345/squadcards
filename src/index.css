@@ -770,6 +770,98 @@ body::before {
 /* Always visible on touch devices */
 @media (hover: none) { .card-delete-btn { opacity: 1; } }
 
+/* ─── CONSENT MODAL ─── */
+.consent-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.consent-modal {
+  background: #fffdf5;
+  border: 3px solid #1a1a1a;
+  border-radius: 16px;
+  padding: 28px 24px 22px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 6px 8px 0 #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.consent-icon {
+  font-size: 32px;
+  text-align: center;
+}
+
+.consent-title {
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.consent-list {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.consent-list li { padding-left: 4px; }
+
+.consent-note {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+  font-style: italic;
+}
+
+.consent-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.consent-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ─── ALREADY OPENED NOTICE ─── */
+.already-opened-notice {
+  text-align: center;
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.already-opened-icon { font-size: 40px; }
+
+.already-opened-notice p {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.already-opened-sub {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: #888 !important;
+}
+
 /* ─── PACKS ─── */
 .pack-area {
   display: flex;

@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react';
 import { MIN_PACK } from '../constants';
 import PackOpenFlow from '../components/PackOpenFlow';
+import ConsentModal from '../components/ConsentModal';
 import SendModal from '../components/SendModal';
 import { createShareablePack } from '../utils/share';
 import { drawFromPool } from '../utils/pack';
+
+const OPENED_KEY = 'sq_opened_packs';
+function getOpenedPacks() {
+  try { return new Set(JSON.parse(localStorage.getItem(OPENED_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function markPackOpened(packId) {
+  const opened = getOpenedPacks();
+  opened.add(packId);
+  localStorage.setItem(OPENED_KEY, JSON.stringify([...opened]));
+}
 
 export default function PacksView({
   active,
@@ -18,14 +30,20 @@ export default function PacksView({
   const [packName, setPackName]   = useState('The Squad Pack');
   const [packSize, setPackSize]   = useState(5);
   const [showOverlay, setShowOverlay] = useState(false);
+  const [showConsent, setShowConsent] = useState(false);
   const [showSend, setShowSend]   = useState(false);
   const [sealing, setSealing]     = useState(false);
+  const [alreadyOpened, setAlreadyOpened] = useState(false);
 
-  // Auto-open incoming shared pack
+  // Auto-open incoming shared pack — check one-time gate first
   useEffect(() => {
     if (incomingPack && active) {
+      if (incomingPack.packId && getOpenedPacks().has(incomingPack.packId)) {
+        setAlreadyOpened(true);
+        return;
+      }
       setCurrentPack({ name: incomingPack.name, cards: incomingPack.cards, shareUrl: null });
-      setShowOverlay(true);
+      setShowConsent(true);
     }
   }, [incomingPack, active]);
 
@@ -56,8 +74,29 @@ export default function PacksView({
     setSealing(false);
   };
 
+  const handleOpenPackClick = () => {
+    setShowConsent(true);
+  };
+
+  const handleConsentConfirm = () => {
+    setShowConsent(false);
+    setShowOverlay(true);
+  };
+
+  const handleConsentCancel = () => {
+    setShowConsent(false);
+    setIncomingPack(null);
+    if (window.location.hash.includes('pack=')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
   const closePack = () => {
     setShowOverlay(false);
+    // Mark received packs as opened so they can't be re-opened
+    if (incomingPack?.packId) {
+      markPackOpened(incomingPack.packId);
+    }
     setIncomingPack(null);
     if (window.location.hash.includes('pack=')) {
       window.history.replaceState(null, '', window.location.pathname);
@@ -134,10 +173,19 @@ export default function PacksView({
           </button>
         </div>
 
+        {/* ── Already-opened notice (received pack only) ── */}
+        {alreadyOpened && (
+          <div className="already-opened-notice">
+            <div className="already-opened-icon">📭</div>
+            <p>You already opened this pack.</p>
+            <p className="already-opened-sub">Cards from it are in your collection.</p>
+          </div>
+        )}
+
         {/* ── Sealed pack ── */}
-        {currentPack && (
+        {currentPack && !alreadyOpened && (
           <div style={{ textAlign: 'center' }}>
-            <div className="pack-visual" onClick={() => setShowOverlay(true)}>
+            <div className="pack-visual" onClick={handleOpenPackClick}>
               <div className="pack-body">
                 <div className="pack-title-text">{displayName}</div>
                 <div className="pack-count-badge">{displayCount} cards</div>
@@ -155,6 +203,13 @@ export default function PacksView({
           </div>
         )}
       </div>
+
+      {showConsent && (
+        <ConsentModal
+          onConfirm={handleConsentConfirm}
+          onCancel={handleConsentCancel}
+        />
+      )}
 
       {showOverlay && currentPack && (
         <PackOpenFlow
