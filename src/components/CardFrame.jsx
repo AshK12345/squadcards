@@ -3,85 +3,130 @@ import { HP_MAP, PIPS, fmtBi } from '../constants';
 
 const HOLO = new Set(['rare', 'legendary', 'secret']);
 
-// Deterministic seed from card name (FNV-1a hash) — drives unique dye pattern per card
+// ── FNV-1a hash → deterministic seed per card name ───────
 function dyeSeed(name = '') {
   let h = 2166136261;
   for (let i = 0; i < name.length; i++) {
     h ^= name.charCodeAt(i);
     h = Math.imul(h, 16777619) >>> 0;
   }
-  return h % 32767; // feTurbulence seed max
+  return h % 9999;
 }
 
-// ── Per-card procedural print/dye texture ──────────────────────────────────
-// Two SVG feTurbulence layers (unique seed per card name):
-//   • dark layer (multiply) = heavier ink deposit in irregular blobs
-//   • light layer (screen)  = faded/lighter patches where dye didn't saturate
-// Together they create the mottled organic look of physical card printing.
-function CardDyeLayer({ seed }) {
-  const dId = `dd${seed}`;   // dark filter id
-  const lId = `dl${seed}`;   // light filter id
-  const lSeed = (seed * 11 + 7) % 32767; // different offset for the light pattern
+// ── Seeded PRNG (mulberry32) ──────────────────────────────
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
 
-  return (
-    <>
-      {/* Heavier ink blobs — darkens small organic patches */}
-      <svg
-        className="card-dye-dark"
-        viewBox="0 0 230 356"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <defs>
-          <filter id={dId} x="0%" y="0%" width="100%" height="100%"
-            colorInterpolationFilters="sRGB">
-            {/* Large-scale fractal noise → organic blobs, not speckles */}
-            <feTurbulence type="fractalNoise"
-              baseFrequency="0.016 0.021"
-              numOctaves="4"
-              seed={seed}
-              result="n" />
-            {/* Push alpha values: most of the card stays transparent,
-                occasional peaks reach up to 14% opacity */}
-            <feComponentTransfer>
-              <feFuncR type="linear" slope="0" />
-              <feFuncG type="linear" slope="0" />
-              <feFuncB type="linear" slope="0" />
-              <feFuncA type="gamma" amplitude="0.14" exponent="2.2" offset="0" />
-            </feComponentTransfer>
-          </filter>
-        </defs>
-        <rect width="230" height="356" fill="black" filter={`url(#${dId})`} />
-      </svg>
+// ── Seeded permutation table for simplex noise ────────────
+function buildPerm(seed) {
+  const rand = mulberry32(seed);
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) {
+    const j = (rand() * (i + 1)) | 0;
+    const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+  }
+  const perm = new Uint8Array(512);
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  return perm;
+}
 
-      {/* Faded / lighter dye patches — slightly lightens other regions */}
-      <svg
-        className="card-dye-light"
-        viewBox="0 0 230 356"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <defs>
-          <filter id={lId} x="0%" y="0%" width="100%" height="100%"
-            colorInterpolationFilters="sRGB">
-            <feTurbulence type="fractalNoise"
-              baseFrequency="0.013 0.018"
-              numOctaves="3"
-              seed={lSeed}
-              result="n" />
-            <feComponentTransfer>
-              <feFuncR type="linear" slope="0" intercept="1" />
-              <feFuncG type="linear" slope="0" intercept="1" />
-              <feFuncB type="linear" slope="0" intercept="1" />
-              {/* Max 9% lightening — subtle faded-dye regions */}
-              <feFuncA type="gamma" amplitude="0.09" exponent="2.6" offset="0" />
-            </feComponentTransfer>
-          </filter>
-        </defs>
-        <rect width="230" height="356" fill="white" filter={`url(#${lId})`} />
-      </svg>
-    </>
-  );
+// ── 2D Simplex noise — output ≈ [-1, 1] ──────────────────
+const GRAD2 = [
+  [1,1],[-1,1],[1,-1],[-1,-1],
+  [1,0],[-1,0],[1,0],[-1,0],
+  [0,1],[0,-1],[0,1],[0,-1],
+];
+
+function simplex2(perm, xin, yin) {
+  const F2 = 0.5 * (Math.sqrt(3) - 1);
+  const G2 = (3 - Math.sqrt(3)) / 6;
+  const s  = (xin + yin) * F2;
+  const i  = Math.floor(xin + s);
+  const j  = Math.floor(yin + s);
+  const t  = (i + j) * G2;
+  const x0 = xin - (i - t);
+  const y0 = yin - (j - t);
+  const i1 = x0 > y0 ? 1 : 0;
+  const j1 = x0 > y0 ? 0 : 1;
+  const x1 = x0 - i1 + G2;
+  const y1 = y0 - j1 + G2;
+  const x2 = x0 - 1 + 2 * G2;
+  const y2 = y0 - 1 + 2 * G2;
+  const ii  = i & 255;
+  const jj  = j & 255;
+  const gi0 = perm[ii      + perm[jj     ]] % 12;
+  const gi1 = perm[ii + i1 + perm[jj + j1]] % 12;
+  const gi2 = perm[ii + 1  + perm[jj + 1 ]] % 12;
+  const dot = (g, x, y) => g[0] * x + g[1] * y;
+  const t0 = 0.5 - x0 * x0 - y0 * y0;
+  const n0 = t0 < 0 ? 0 : (t0 * t0) * (t0 * t0) * dot(GRAD2[gi0], x0, y0);
+  const t1 = 0.5 - x1 * x1 - y1 * y1;
+  const n1 = t1 < 0 ? 0 : (t1 * t1) * (t1 * t1) * dot(GRAD2[gi1], x1, y1);
+  const t2 = 0.5 - x2 * x2 - y2 * y2;
+  const n2 = t2 < 0 ? 0 : (t2 * t2) * (t2 * t2) * dot(GRAD2[gi2], x2, y2);
+  return 70 * (n0 + n1 + n2);
+}
+
+// ── fBm — fractional Brownian motion ─────────────────────
+function fbm(perm, x, y, harmonics, spread, gain, period) {
+  let value = 0, freq = 1 / period, amp = 1, maxAmp = 0;
+  for (let i = 0; i < harmonics; i++) {
+    value  += simplex2(perm, x * freq, y * freq) * amp;
+    maxAmp += amp;
+    freq   *= spread;
+    amp    *= gain;
+  }
+  return value / maxAmp; // normalized [-1, 1]
+}
+
+// ── Transfer: fBm [-1,1] → brightness [0,1] ──────────────
+function transfer(v, amplitude, offset, exponent) {
+  v = (v * amplitude + 1) * 0.5 + offset;
+  v = Math.max(0, Math.min(1, v));
+  return Math.pow(v, exponent);
+}
+
+// ── Grain settings (matched from user screenshot) ─────────
+const GRAIN = {
+  size:      128,   // texture canvas resolution (upscaled by CSS)
+  period:    2.3,
+  harmonics: 12,
+  spread:    3.10,
+  gain:      0.53,
+  exponent:  1.77,
+  amplitude: 2.30,
+  offset:    0.330,
+};
+
+// Generates a 128×128 simplex fBm bitmap, returns a dataURL
+function generateGrainURL(seed) {
+  const { size, period, harmonics, spread, gain, exponent, amplitude, offset } = GRAIN;
+  const perm   = buildPerm(seed);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(size, size);
+  for (let py = 0; py < size; py++) {
+    for (let px = 0; px < size; px++) {
+      const v   = transfer(
+        fbm(perm, px / size, py / size, harmonics, spread, gain, period),
+        amplitude, offset, exponent
+      );
+      const b   = (v * 255) | 0;
+      const idx = (py * size + px) * 4;
+      img.data[idx] = img.data[idx + 1] = img.data[idx + 2] = b;
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas.toDataURL();
 }
 
 export default function CardFrame({ card, index, noTilt = false }) {
@@ -89,10 +134,21 @@ export default function CardFrame({ card, index, noTilt = false }) {
   const frameRef = useRef(null);
   const holoRef  = useRef(null);
   const sparkRef = useRef(null);
+  const grainRef = useRef(null);
 
   const isHolo   = HOLO.has(card.rarity);
   const pipCount = PIPS[card.rarity] ?? 1;
   const seed     = dyeSeed(card.name);
+
+  // Generate grain texture after first paint (non-blocking)
+  useEffect(() => {
+    const el = grainRef.current;
+    if (!el) return;
+    const id = setTimeout(() => {
+      el.style.backgroundImage = `url(${generateGrainURL(seed)})`;
+    }, 0);
+    return () => clearTimeout(id);
+  }, [seed]);
 
   /* ── pointer tracking ── */
   const applyTilt = (clientX, clientY) => {
@@ -111,7 +167,7 @@ export default function CardFrame({ card, index, noTilt = false }) {
 
     if (holoRef.current) {
       const angle = 110 + (x - 0.5) * 90;
-      const shine = `radial-gradient(circle at ${x*100}% ${y*100}%,
+      const shine = `radial-gradient(circle at ${x * 100}% ${y * 100}%,
         rgba(255,255,255,0.28) 0%, transparent 55%)`;
 
       let rainbow;
@@ -135,7 +191,7 @@ export default function CardFrame({ card, index, noTilt = false }) {
     }
 
     if (sparkRef.current) {
-      sparkRef.current.style.backgroundPosition = `${x*80}% ${y*80}%`;
+      sparkRef.current.style.backgroundPosition = `${x * 80}% ${y * 80}%`;
       sparkRef.current.style.opacity = '0.65';
     }
   };
@@ -175,8 +231,8 @@ export default function CardFrame({ card, index, noTilt = false }) {
     >
       <div className="card-frame" ref={frameRef}>
 
-        {/* ── Procedural print/dye texture (unique per card name) ── */}
-        <CardDyeLayer seed={seed} />
+        {/* ── Simplex fBm grain texture (unique seed per card name) ── */}
+        <div className="card-grain-layer" ref={grainRef} aria-hidden="true" />
 
         {/* ── holographic layers (rare / legendary / secret only) ── */}
         {isHolo && <div className="holo-shimmer" />}
