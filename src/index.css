@@ -2282,13 +2282,13 @@ body::before {
 
 /* Position wrapper: translate + scale + opacity (no rotation) */
 .ta-frisbee-pos {
-  animation: taFrisbeePos 1.1s linear forwards;
+  animation: taFrisbeePos 2.0s linear forwards;
 }
 /* Spin wrapper: rotation only — single cubic bezier so no stutter */
 .ta-frisbee-spin {
   position: relative;
   width: 230px; height: 356px;
-  animation: taFrisbeeSpin 1.1s linear forwards;
+  animation: taFrisbeeSpin 2.0s linear forwards;
 }
 /* Spirograph SVG: inside spin element, fades in at release and lingers */
 .ta-spiro-svg {
@@ -2296,7 +2296,7 @@ body::before {
   width: 230px; height: 356px;
   overflow: visible; pointer-events: none;
   opacity: 0;
-  animation: taSpiroFade 1.1s linear forwards;
+  animation: taSpiroFade 2.0s linear forwards;
 }
 
 @keyframes taFrisbeePos {

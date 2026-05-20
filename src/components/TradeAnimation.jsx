@@ -6,11 +6,11 @@ const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
 
 // phase timeline:
 //   0      slide-in — departing card slides up from below screen to center
-//   800    depart   — card winds up & shoots right (1.1s frisbee throw)
-//   1900   arrive   — face-down card hurled in, bounces off walls
-//   4100   flip-out — scaleX squeeze to 0
-//   4300   flip-in  — swap to front, scaleX expand from 0
-//   4520   show     — received card visible, upgrade burst, button
+//   800    depart   — card winds up & shoots right (2.0s frisbee throw)
+//   2800   arrive   — face-down card hurled in, bounces off walls
+//   5000   flip-out — scaleX squeeze to 0
+//   5200   flip-in  — swap to front, scaleX expand from 0
+//   5420   show     — received card visible, upgrade burst, button
 
 export default function TradeAnimation({
   departingCard, receivedCard,
@@ -24,14 +24,14 @@ export default function TradeAnimation({
   useEffect(() => {
     const t = [
       setTimeout(() => setPhase('depart'),   800),
-      setTimeout(() => setPhase('arrive'),   1900),
-      setTimeout(() => setPhase('flip-out'), 4100),
+      setTimeout(() => setPhase('arrive'),   2800),  // 800 + 2000
+      setTimeout(() => setPhase('flip-out'), 5000),  // 2800 + 2200
       setTimeout(() => {
         setShowFront(true);
         setPhase('flip-in');
         if (upgraded) setBurstKey(k => k + 1);
-      }, 4300),
-      setTimeout(() => setPhase('show'),     4520),
+      }, 5200),                                      // 5000 + 200
+      setTimeout(() => setPhase('show'),     5420),  // 5200 + 220
     ];
     return () => t.forEach(clearTimeout);
   }, []);
