@@ -264,6 +264,26 @@ body::before {
 .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
 .card-img-placeholder { font-size: 40px; }
 
+/* Edit / crop mode */
+.card-img-edit { cursor: grab; }
+.card-img-edit:active { cursor: grabbing; }
+
+.card-img-edit-hint {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 3px 7px;
+  border-radius: 20px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 3;
+}
+
 /* Per-card simplex fBm grain — canvas-generated, unique seed per card name.
    Background-image set by JS after first paint; CSS handles blend + opacity. */
 .card-grain-layer {

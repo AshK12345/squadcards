@@ -129,12 +129,14 @@ function generateGrainURL(seed) {
   return canvas.toDataURL();
 }
 
-export default function CardFrame({ card, index, noTilt = false }) {
-  const wrapRef  = useRef(null);
-  const frameRef = useRef(null);
-  const holoRef  = useRef(null);
-  const sparkRef = useRef(null);
-  const grainRef = useRef(null);
+export default function CardFrame({ card, index, noTilt = false, editImg = false, onImgChange }) {
+  const wrapRef   = useRef(null);
+  const frameRef  = useRef(null);
+  const holoRef   = useRef(null);
+  const sparkRef  = useRef(null);
+  const grainRef  = useRef(null);
+  const imgDrag   = useRef({ active: false, lastX: 0, lastY: 0 });
+  const pinchRef  = useRef({ active: false, lastDist: 0 });
 
   const isHolo   = HOLO.has(card.rarity);
   const pipCount = PIPS[card.rarity] ?? 1;
@@ -206,6 +208,47 @@ export default function CardFrame({ card, index, noTilt = false }) {
     if (sparkRef.current) sparkRef.current.style.opacity = '0';
   };
 
+  /* ── image crop interaction (editImg mode only) ── */
+  const onImgPointerDown = (e) => {
+    if (!editImg) return;
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    imgDrag.current = { active: true, lastX: e.clientX, lastY: e.clientY };
+  };
+  const onImgPointerMove = (e) => {
+    if (!editImg || !imgDrag.current.active) return;
+    e.stopPropagation();
+    const dx = e.clientX - imgDrag.current.lastX;
+    const dy = e.clientY - imgDrag.current.lastY;
+    imgDrag.current.lastX = e.clientX;
+    imgDrag.current.lastY = e.clientY;
+    onImgChange?.({ dx, dy, ds: 1 });
+  };
+  const onImgPointerUp = (e) => {
+    if (!editImg) return;
+    e.stopPropagation();
+    imgDrag.current.active = false;
+  };
+  const onImgWheel = (e) => {
+    if (!editImg) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onImgChange?.({ dx: 0, dy: 0, ds: e.deltaY < 0 ? 1.06 : 0.94 });
+  };
+  const onImgTouchMove = (e) => {
+    if (!editImg || e.touches.length < 2) return;
+    e.preventDefault();
+    const dx = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+    const dy = Math.abs(e.touches[0].clientY - e.touches[1].clientY);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (pinchRef.current.active && pinchRef.current.lastDist > 0) {
+      const ds = dist / pinchRef.current.lastDist;
+      onImgChange?.({ dx: 0, dy: 0, ds });
+    }
+    pinchRef.current = { active: true, lastDist: dist };
+  };
+  const onImgTouchEnd = () => { pinchRef.current = { active: false, lastDist: 0 }; };
+
   const onMouseMove = (e) => applyTilt(e.clientX, e.clientY);
 
   const applyTiltRef = useRef(applyTilt);
@@ -247,11 +290,33 @@ export default function CardFrame({ card, index, noTilt = false }) {
           <div className="card-hp">{HP_MAP[card.rarity]}</div>
         </div>
 
-        <div className="card-img-wrap">
+        <div
+          className={`card-img-wrap${editImg ? ' card-img-edit' : ''}`}
+          onPointerDown={editImg ? onImgPointerDown : undefined}
+          onPointerMove={editImg ? onImgPointerMove : undefined}
+          onPointerUp={editImg ? onImgPointerUp : undefined}
+          onWheel={editImg ? onImgWheel : undefined}
+          onTouchMove={editImg ? onImgTouchMove : undefined}
+          onTouchEnd={editImg ? onImgTouchEnd : undefined}
+        >
           {card.photo
-            ? <img src={card.photo} alt={card.name} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }} />
+            ? <img
+                src={card.photo}
+                alt={card.name}
+                style={{
+                  transform: `translate(${card.imgX ?? 0}px, ${card.imgY ?? 0}px) scale(${card.imgScale ?? 1})`,
+                  transformOrigin: 'center center',
+                  userSelect: 'none',
+                  touchAction: editImg ? 'none' : undefined,
+                }}
+                draggable={false}
+                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+              />
             : null}
           <div className="card-img-placeholder" style={card.photo ? { display: 'none' } : {}}>👤</div>
+          {editImg && card.photo && (
+            <div className="card-img-edit-hint">✋ drag · scroll to zoom</div>
+          )}
         </div>
 
         <div className="card-type-line">{card.type}</div>

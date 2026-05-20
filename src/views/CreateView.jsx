@@ -15,9 +15,10 @@ export default function CreateView({ active, collection, onSave, showToast }) {
   const [photoSrc, setPhotoSrc] = useState(null);
   const [stats, setStats] = useState(DEFAULT_STATS.map((s) => ({ ...s })));
   const [aiKey, setAiKey] = useState(0); // increment to remount AIFlavor and clear chips
-  // Stable grain seed for the preview — generated once on mount so typing
-  // doesn't change the card texture. Saved with the card for localStorage.
   const [grainSeed] = useState(() => Math.floor(Math.random() * 9999));
+  const [imgX, setImgX]         = useState(0);
+  const [imgY, setImgY]         = useState(0);
+  const [imgScale, setImgScale] = useState(1);
 
   const cardData = {
     name: name || 'Unknown',
@@ -27,6 +28,15 @@ export default function CreateView({ active, collection, onSave, showToast }) {
     photo: photoSrc,
     stats,
     grainSeed,
+    imgX,
+    imgY,
+    imgScale,
+  };
+
+  const handleImgChange = ({ dx, dy, ds }) => {
+    setImgX(x => x + dx);
+    setImgY(y => y + dy);
+    setImgScale(s => Math.max(0.5, Math.min(4, s * ds)));
   };
 
   const handleStatChange = useCallback((index, val) => {
@@ -46,7 +56,13 @@ export default function CreateView({ active, collection, onSave, showToast }) {
     setRarity('common');
     setPhotoSrc(null);
     setStats(DEFAULT_STATS.map((s) => ({ ...s })));
-    setAiKey(k => k + 1); // clear AI suggestion chips
+    setAiKey(k => k + 1);
+    setImgX(0); setImgY(0); setImgScale(1);
+  };
+
+  const handlePhoto = (src) => {
+    setPhotoSrc(src);
+    setImgX(0); setImgY(0); setImgScale(1); // reset crop when new photo picked
   };
 
   return (
@@ -76,7 +92,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
             </div>
             <div className="form-row">
               <label className="form-label">Photo</label>
-              <PhotoUpload photoSrc={photoSrc} onPhoto={setPhotoSrc} />
+              <PhotoUpload photoSrc={photoSrc} onPhoto={handlePhoto} />
             </div>
           </div>
 
@@ -136,7 +152,12 @@ export default function CreateView({ active, collection, onSave, showToast }) {
         {/* RIGHT: sticky preview */}
         <div className="preview-sticky">
           <span className="preview-label">preview</span>
-          <CardFrame card={cardData} index={collection.length} />
+          <CardFrame
+            card={cardData}
+            index={collection.length}
+            editImg={!!photoSrc}
+            onImgChange={handleImgChange}
+          />
         </div>
       </div>
     </div>

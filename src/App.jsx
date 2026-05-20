@@ -18,14 +18,6 @@ export default function App() {
   const [incomingPack, setIncomingPack] = useState(null);
   const [incomingTradeId, setIncomingTradeId] = useState(null);
 
-  // When a card is deleted from the collection, scrub it from any open sealed pack
-  useEffect(() => {
-    if (!currentPack) return;
-    const ids = new Set(cards.map(c => c.id));
-    const filtered = currentPack.filter(c => !c.id || ids.has(c.id));
-    if (filtered.length !== currentPack.length) setCurrentPack(filtered);
-  }, [cards]);
-
   // Detect shared pack or trade in URL hash on load
   useEffect(() => {
     const packMatch  = window.location.hash.match(/[#&]pack=([^&]+)/);
