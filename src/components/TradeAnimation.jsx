@@ -5,31 +5,33 @@ import CardFrame from './CardFrame';
 const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
 
 // phase timeline:
-//   0      depart   — departing card squishes & shoots right
-//   900    arrive   — face-down card hurled in, bounces off walls
-//   3100   flip-out — scaleX squeeze to 0
-//   3300   flip-in  — swap to front, scaleX expand from 0
-//   3520   show     — received card visible, upgrade burst, button
+//   0      slide-in — departing card slides up from below screen to center
+//   800    depart   — card winds up & shoots right (1.1s frisbee throw)
+//   1900   arrive   — face-down card hurled in, bounces off walls
+//   4100   flip-out — scaleX squeeze to 0
+//   4300   flip-in  — swap to front, scaleX expand from 0
+//   4520   show     — received card visible, upgrade burst, button
 
 export default function TradeAnimation({
   departingCard, receivedCard,
   upgraded, originalRarity, newRarity,
   onComplete,
 }) {
-  const [phase, setPhase]       = useState('depart');
+  const [phase, setPhase]       = useState('slide-in');
   const [showFront, setShowFront] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
 
   useEffect(() => {
     const t = [
-      setTimeout(() => setPhase('arrive'),   900),
-      setTimeout(() => setPhase('flip-out'), 3100),
+      setTimeout(() => setPhase('depart'),   800),
+      setTimeout(() => setPhase('arrive'),   1900),
+      setTimeout(() => setPhase('flip-out'), 4100),
       setTimeout(() => {
         setShowFront(true);
         setPhase('flip-in');
         if (upgraded) setBurstKey(k => k + 1);
-      }, 3300),
-      setTimeout(() => setPhase('show'),     3520),
+      }, 4300),
+      setTimeout(() => setPhase('show'),     4520),
     ];
     return () => t.forEach(clearTimeout);
   }, []);
@@ -42,8 +44,15 @@ export default function TradeAnimation({
       {/* Scanline overlay */}
       <div className="ta-scanlines" />
 
-      {/* "TRADE!" flash text */}
-      {phase === 'depart' && <div className="ta-title">TRADE!</div>}
+      {/* "TRADE!" flash text — visible while card slides in */}
+      {phase === 'slide-in' && <div className="ta-title">TRADE!</div>}
+
+      {/* ── SLIDE-IN: departing card rises from bottom of screen ── */}
+      {phase === 'slide-in' && (
+        <div className="ta-stage ta-slide-in">
+          <CardFrame card={departingCard} index={0} noTilt />
+        </div>
+      )}
 
       {/* ── DEPARTING CARD (1f spirograph frisbee) ── */}
       {phase === 'depart' && (
