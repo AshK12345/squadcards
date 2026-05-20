@@ -273,7 +273,7 @@ body::before {
   z-index: 7;
   pointer-events: none;
   mix-blend-mode: multiply;
-  opacity: 0.22;
+  opacity: 0.12;
   background-size: cover;
   background-repeat: no-repeat;
 }
