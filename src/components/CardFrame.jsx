@@ -138,7 +138,8 @@ export default function CardFrame({ card, index, noTilt = false }) {
 
   const isHolo   = HOLO.has(card.rarity);
   const pipCount = PIPS[card.rarity] ?? 1;
-  const seed     = dyeSeed(card.name);
+  // Seed priority: explicit grainSeed (preview/localStorage) → card id (Supabase) → name fallback
+  const seed = card.grainSeed ?? dyeSeed(card.id ?? card.name ?? '');
 
   // Generate grain texture after first paint (non-blocking)
   useEffect(() => {

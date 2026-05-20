@@ -15,6 +15,9 @@ export default function CreateView({ active, collection, onSave, showToast }) {
   const [photoSrc, setPhotoSrc] = useState(null);
   const [stats, setStats] = useState(DEFAULT_STATS.map((s) => ({ ...s })));
   const [aiKey, setAiKey] = useState(0); // increment to remount AIFlavor and clear chips
+  // Stable grain seed for the preview — generated once on mount so typing
+  // doesn't change the card texture. Saved with the card for localStorage.
+  const [grainSeed] = useState(() => Math.floor(Math.random() * 9999));
 
   const cardData = {
     name: name || 'Unknown',
@@ -23,6 +26,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
     rarity,
     photo: photoSrc,
     stats,
+    grainSeed,
   };
 
   const handleStatChange = useCallback((index, val) => {
