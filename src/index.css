@@ -2300,45 +2300,49 @@ body::before {
 }
 
 @keyframes taFrisbeePos {
-  /* Windup: pull left, compress/stretch */
-  0%   { transform: translate(0,0) scaleX(1) scaleY(1); opacity:1;
+  /* Hold upright after slide-in — gives a seamless rest before windup begins */
+  0%   { transform: translate(0,0) scaleX(1) scaleY(1); opacity:1; }
+  15%  { transform: translate(0,0) scaleX(1) scaleY(1); opacity:1;
          animation-timing-function: cubic-bezier(0.55,0,0.85,0.18); }
-  8%   { transform: translate(-24px,6px) scaleX(0.80) scaleY(1.26); opacity:1;
+  /* Windup: pull left, compress/stretch */
+  23%  { transform: translate(-24px,6px) scaleX(0.80) scaleY(1.26); opacity:1;
          animation-timing-function: cubic-bezier(0.1,0,0.35,1); }
-  18%  { transform: translate(-66px,10px) scaleX(0.54) scaleY(1.62); opacity:1; }
-  24%  { transform: translate(-66px,10px) scaleX(0.54) scaleY(1.62); opacity:1;
+  33%  { transform: translate(-66px,10px) scaleX(0.54) scaleY(1.62); opacity:1; }
+  39%  { transform: translate(-66px,10px) scaleX(0.54) scaleY(1.62); opacity:1;
          animation-timing-function: cubic-bezier(0.97,0,1,1); }
   /* Snap to release + flight */
-  33%  { transform: translate(-4px,0) scaleX(1) scaleY(1); opacity:1;
+  48%  { transform: translate(-4px,0) scaleX(1) scaleY(1); opacity:1;
          animation-timing-function: linear; }
-  55%  { transform: translate(280px,-55px) scaleX(1) scaleY(1); opacity:1;
+  65%  { transform: translate(280px,-55px) scaleX(1) scaleY(1); opacity:1;
          animation-timing-function: linear; }
-  75%  { transform: translate(560px,-90px) scaleX(0.80) scaleY(0.80); opacity:0.55;
+  79%  { transform: translate(560px,-90px) scaleX(0.80) scaleY(0.80); opacity:0.55;
          animation-timing-function: linear; }
-  90%  { transform: translate(780px,-108px) scaleX(0.45) scaleY(0.45); opacity:0; }
+  91%  { transform: translate(780px,-108px) scaleX(0.45) scaleY(0.45); opacity:0; }
   100% { transform: translate(820px,-112px) scaleX(0.45) scaleY(0.45); opacity:0; }
 }
 
 @keyframes taFrisbeeSpin {
-  /* Windup tilt: rotateX (nose-up) + rotateZ (lean back) */
+  /* Hold upright */
   0%   { transform: perspective(800px) rotateX(0deg)   rotateZ(0deg); }
-  8%   { transform: perspective(800px) rotateX(-14deg) rotateZ(-12deg); }
-  18%  { transform: perspective(800px) rotateX(-30deg) rotateZ(-26deg); }
-  24%  { transform: perspective(800px) rotateX(-30deg) rotateZ(-26deg); }
-  30%  { transform: perspective(800px) rotateX(-8deg)  rotateZ(0deg); }
+  15%  { transform: perspective(800px) rotateX(0deg)   rotateZ(0deg); }
+  /* Windup tilt: rotateX (nose-up) + rotateZ (lean back) */
+  23%  { transform: perspective(800px) rotateX(-14deg) rotateZ(-12deg); }
+  33%  { transform: perspective(800px) rotateX(-30deg) rotateZ(-26deg); }
+  39%  { transform: perspective(800px) rotateX(-30deg) rotateZ(-26deg); }
+  45%  { transform: perspective(800px) rotateX(-8deg)  rotateZ(0deg); }
   /* Release: single cubic bezier → smooth fast spin, no per-keyframe restart */
-  33%  { transform: perspective(800px) rotateX(-12deg) rotateZ(0deg);
+  48%  { transform: perspective(800px) rotateX(-12deg) rotateZ(0deg);
          animation-timing-function: cubic-bezier(0.06,0.65,0.85,0.9); }
-  90%  { transform: perspective(800px) rotateX(-28deg) rotateZ(1080deg); }
+  91%  { transform: perspective(800px) rotateX(-28deg) rotateZ(1080deg); }
   100% { transform: perspective(800px) rotateX(-28deg) rotateZ(1104deg); }
 }
 
 @keyframes taSpiroFade {
-  0%,30%  { opacity: 0; }
-  36%     { opacity: 1; }
-  70%     { opacity: 0.55; }
-  88%     { opacity: 0.20; }
-  95%     { opacity: 0; }
+  0%,45%  { opacity: 0; }
+  51%     { opacity: 1; }
+  78%     { opacity: 0.55; }
+  91%     { opacity: 0.20; }
+  97%     { opacity: 0; }
   100%    { opacity: 0; }
 }
 
