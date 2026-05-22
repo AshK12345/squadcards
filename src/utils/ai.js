@@ -81,6 +81,7 @@ async function callClaude(prompt, maxTokens = 500, photoSrc = null) {
     clearTimeout(timer);
   }
 
+  if (!resp) throw new Error('Request aborted or never sent');
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error?.message || `API error ${resp.status}`);
@@ -113,7 +114,14 @@ export async function evaluateStats(name, type, photoSrc = null, collection = []
     : '';
   const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\n${photoLine}${squadContext}${memoryLine}Person: "${name}"${nameNote} — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE −999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE −999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nRespond ONLY with JSON, no markdown: {"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
   const text = await callClaude(prompt, 200, photoSrc);
-  return JSON.parse(text.replace(/```json|```/g, '').trim());
+  const cleaned = text.replace(/```json|```/g, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('Could not parse stats JSON from AI response');
+  }
 }
 
 export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, collection = [], memory = null) {
