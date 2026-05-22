@@ -139,8 +139,8 @@ export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, 
   const nameNote = firstName && firstName.toLowerCase() !== name.trim().toLowerCase()
     ? ` Refer to them as "${firstName}" (first name only), not the full card title.`
     : '';
-  const prompt = `TCG card flavor text for a friend. 2 sentences max, under 30 words. Light roast, not mean.${nameNote}${photoLine}\n\n${squadContext}${memoryLine}Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}. Return ONLY a JSON array of 4 strings, no markdown.`;
-  const text = await callClaude(prompt, 500, photoSrc);
+  const prompt = `TCG card flavor text for a friend. Each suggestion: 1–2 sentences, strictly under 25 words. Light roast, not mean.${nameNote}${photoLine}\n\n${squadContext}${memoryLine}Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}.\n\nOutput EXACTLY this and nothing else — no explanation, no markdown, no preamble:\n["suggestion 1","suggestion 2","suggestion 3","suggestion 4"]`;
+  const text = await callClaude(prompt, 800, photoSrc);
   const cleaned = text.replace(/```json|```/g, '').trim();
   try {
     return JSON.parse(cleaned);

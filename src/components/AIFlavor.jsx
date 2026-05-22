@@ -15,8 +15,9 @@ export default function AIFlavor({ name, type, rarity, stats, photoSrc, collecti
       const memory = getMemory(name);
       const suggestions = await suggestFlavor(name || 'your friend', type || '', rarity, stats, photoSrc, collection || [], memory);
       setChips(suggestions);
-    } catch {
-      setError(true);
+    } catch (e) {
+      console.error('[AIFlavor] suggestFlavor failed:', e);
+      setError(e?.message || 'unknown error');
     }
     setLoading(false);
   };
@@ -40,7 +41,9 @@ export default function AIFlavor({ name, type, rarity, stats, photoSrc, collecti
       </div>
 
       {error && (
-        <span style={{ fontSize: 11, color: '#e00', fontWeight: 700 }}>Try again!</span>
+        <span style={{ fontSize: 11, color: '#e00', fontWeight: 700 }}>
+          Try again! {error !== true && <span style={{ fontWeight: 400, opacity: 0.7 }}>({String(error).slice(0, 60)})</span>}
+        </span>
       )}
 
       {chips.length > 0 && (
