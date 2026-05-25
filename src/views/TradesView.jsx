@@ -4,10 +4,27 @@ import {
   setReady, executeTrade, claimCard, cancelLobby,
   fetchTrade, subscribeTrade,
 } from '../utils/trade';
+import { generateAIOpponentCard } from '../utils/ai';
 import CardFrame from '../components/CardFrame';
 import TradeAnimation from '../components/TradeAnimation';
 import { SUPABASE_ENABLED } from '../lib/supabase';
-import { HP_MAP } from '../constants';
+import { HP_MAP, DEFAULT_STATS } from '../constants';
+
+// Emoji → small canvas JPEG so AI cards have a persisted "photo"
+function emojiToPhoto(emoji = '🤖') {
+  const S = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, S, S);
+  g.addColorStop(0, '#0d0d1f'); g.addColorStop(1, '#1a0a2e');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+  ctx.font = `${S * 0.46}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, S / 2, S / 2);
+  return canvas.toDataURL('image/jpeg', 0.88);
+}
+const clampAI = (v, mn, mx) => Math.min(mx, Math.max(mn, Math.round(Number(v) || 0)));
 
 const LS_KEY = 'sc-pending-trade';
 const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
@@ -15,6 +32,7 @@ const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
 export default function TradesView({
   active, collection, deviceId, reloadCards,
   showToast, incomingTradeId, clearIncomingTrade,
+  addCard, removeCard,
 }) {
   const [phase, setPhase]           = useState('home');
   const [role, setRole]             = useState(null);
@@ -173,6 +191,38 @@ export default function TradesView({
     resetToHome();
   };
 
+  /* ── AI opponent trade ── */
+  const startAITrade = async () => {
+    if (!picked) return;
+    setPhase('ai-generating');
+    try {
+      const aiData = await generateAIOpponentCard();
+      const photo  = emojiToPhoto(aiData.emoji || '🤖');
+      const aiCardData = {
+        name:      aiData.name   || 'Glitch Entity',
+        type:      aiData.type   || 'unhinged · no cap · void spawn',
+        rarity:    ['common','uncommon','rare'].includes(aiData.rarity) ? aiData.rarity : 'common',
+        flavor:    aiData.flavor || 'Spawned from corrupted data. Smells like burned WiFi.',
+        photo,
+        stats: DEFAULT_STATS.map(s => ({
+          ...s,
+          val: clampAI(aiData[s.key], s.bipolar ? -999 : 0, 999),
+        })),
+        grainSeed: Math.floor(Math.random() * 9999),
+      };
+      // Add AI card to collection; remove the traded card
+      await addCard(aiCardData);
+      if (picked?.id) await removeCard(picked.id);
+      setMyCard(picked);
+      setResult({ newCard: aiCardData, upgraded: false, originalRarity: picked.rarity, newRarity: aiCardData.rarity });
+      setPhase('animating');
+    } catch (e) {
+      console.error('AI trade error:', e);
+      showToast('AI is cooked rn 😭 try again');
+      setPhase('ai-picking');
+    }
+  };
+
   const copyLink = () => {
     navigator.clipboard.writeText(roomUrl).then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 2000);
@@ -211,9 +261,55 @@ export default function TradesView({
               Start a Trade
             </button>
             <button className="btn trd-cancel-btn"
+              style={{ marginBottom: 10 }}
               onClick={() => setPhase('joining')} type="button">
               Join a Trade
             </button>
+            <button className="btn btn-ai-trade"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => { setPicked(null); setPhase('ai-picking'); }} type="button">
+              🤖 Challenge AI
+            </button>
+          </div>
+        )}
+
+        {/* ── AI PICKING ── */}
+        {phase === 'ai-picking' && (
+          <div className="pack-builder">
+            <button className="trade-back-btn" onClick={() => { setPhase('home'); setPicked(null); }}>← Back</button>
+            <h3 style={{ marginBottom: 4 }}>Challenge the AI 🤖</h3>
+            <p className="trade-desc">Pick a card to sacrifice. The AI will generate something deeply unhinged in return.</p>
+            {eligible.length === 0 ? (
+              <p className="trade-empty-note">Add some cards first!</p>
+            ) : (
+              <div className="trd-card-list-rows">
+                {eligible.map(c => (
+                  <div key={c.id}
+                    className={`trd-card-row rarity-${c.rarity} ${picked?.id === c.id ? 'trd-row-selected' : ''}`}
+                    onClick={() => setPicked(c)}>
+                    <div className="trd-row-dot" />
+                    <span className="trd-row-name">{c.name}</span>
+                    <span className="trd-row-hp">{HP_MAP[c.rarity]}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button className="btn btn-ai-trade"
+              style={{ width: '100%', justifyContent: 'center', marginTop: 10 }}
+              onClick={startAITrade} disabled={!picked} type="button">
+              {picked ? `🤖 Sacrifice "${picked.name}"` : 'Select a card above'}
+            </button>
+          </div>
+        )}
+
+        {/* ── AI GENERATING ── */}
+        {phase === 'ai-generating' && (
+          <div className="pack-builder" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>🤖</div>
+            <p className="trade-desc" style={{ marginBottom: 16 }}>AI is cooking something terrible...</p>
+            <span className="ai-loading">
+              Generating<span className="dots"><span /><span /><span /></span>
+            </span>
           </div>
         )}
 

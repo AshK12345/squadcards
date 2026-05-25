@@ -112,15 +112,49 @@ export async function evaluateStats(name, type, photoSrc = null, collection = []
   const nameNote = firstName && firstName.toLowerCase() !== name.trim().toLowerCase()
     ? ` (refer to them as "${firstName}", not the full title)`
     : '';
-  const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\n${photoLine}${squadContext}${memoryLine}Person: "${name}"${nameNote} — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE −999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE −999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nRespond ONLY with JSON, no markdown: {"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
-  const text = await callClaude(prompt, 200, photoSrc);
-  const cleaned = text.replace(/```json|```/g, '').trim();
+  const prompt = `Assign TCG card stats for this person. Be funny, opinionated, bold — avoid clustering around 500. Use extremes.\n\n${photoLine}${squadContext}${memoryLine}Person: "${name}"${nameNote} — Vibe: "${type}"\n\n- rizz: social magnetism/smoothness. RANGE -999 to 999. Negative = genuinely awkward.\n- aura: general presence/vibe/energy. RANGE -999 to 999. Negative = bad vibes / cursed energy.\n- clout: social status and influence. RANGE 0 to 999.\n- chuddness: nerd/obsessive/hyperfixation energy. RANGE 0 to 999.\n\nOutput EXACTLY this JSON and nothing else — no markdown, no explanation:\n{"rizz":number,"aura":number,"clout":number,"chuddness":number}`;
+  const text = await callClaude(prompt, 400, photoSrc);
+  // Normalize Unicode minus/dash chars that Claude sometimes echoes back
+  const cleaned = text.replace(/```json|```/g, '').replace(/[\u2212\u2013\u2014]/g, '-').trim();
   try {
     return JSON.parse(cleaned);
   } catch {
     const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) return JSON.parse(m[0]);
+    if (m) return JSON.parse(m[0].replace(/[\u2212\u2013\u2014]/g, '-'));
     throw new Error('Could not parse stats JSON from AI response');
+  }
+}
+
+// Analyse an uploaded photo and return a brainrot Type/Vibe string
+export async function analyzePhotoVibe(photoSrc) {
+  const prompt = `Look at this person's photo and write a short "Type / Vibe" label for a Gen Alpha friend trading card.
+Use gen alpha slang and brainrot internet lingo. Keep it under 8 words total, use · to separate 2-3 tags.
+Examples: "chronically online · main character energy", "sigma mindset · unhinged", "certified rizz lord · ick dealer", "NPC behavior · AFK IRL"
+Reply with ONLY the vibe string — no quotes, no explanation.`;
+  const raw = await callClaude(prompt, 60, photoSrc);
+  return raw.trim().replace(/^["']|["']$/g, '');
+}
+
+// Generate a fully AI-created brainrot opponent card for the AI trade feature
+export async function generateAIOpponentCard() {
+  const prompt = `Generate a completely unhinged Gen Alpha / brainrot NPC trading card character. Maximum cringe and silliness.
+
+Output EXACTLY this JSON and nothing else — no markdown, no preamble:
+{"name":"silly 2-4 word gen alpha name","type":"brainrot vibe tags under 8 words","flavor":"cringe 1-2 sentence flavor under 25 words","rarity":"common","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
+
+Rules:
+- rarity must be exactly one of: "common", "uncommon", "rare"
+- rizz and aura: range -999 to 999, use wild extremes
+- clout and chuddness: range 0 to 999, use wild extremes
+- emoji: 3-4 emojis that capture this character's unhinged vibe`;
+  const text = await callClaude(prompt, 400);
+  const cleaned = text.replace(/```json|```/g, '').replace(/[\u2212\u2013\u2014]/g, '-').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0].replace(/[\u2212\u2013\u2014]/g, '-'));
+    throw new Error('Could not parse AI opponent card');
   }
 }
 

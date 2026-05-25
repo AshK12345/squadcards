@@ -6,6 +6,7 @@ import StatsSection from '../components/StatsSection';
 import AIFlavor from '../components/AIFlavor';
 import CardFrame from '../components/CardFrame';
 import { saveStats } from '../utils/aiMemory';
+import { analyzePhotoVibe } from '../utils/ai';
 
 export default function CreateView({ active, collection, onSave, showToast }) {
   const [name, setName] = useState('');
@@ -19,6 +20,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
   const [imgX, setImgX]         = useState(0);
   const [imgY, setImgY]         = useState(0);
   const [imgScale, setImgScale] = useState(1);
+  const [vibeLoading, setVibeLoading] = useState(false);
 
   const cardData = {
     name: name || 'Unknown',
@@ -62,7 +64,13 @@ export default function CreateView({ active, collection, onSave, showToast }) {
 
   const handlePhoto = (src) => {
     setPhotoSrc(src);
-    setImgX(0); setImgY(0); setImgScale(1); // reset crop when new photo picked
+    setImgX(0); setImgY(0); setImgScale(1);
+    // Auto-generate vibe from photo in the background
+    setVibeLoading(true);
+    analyzePhotoVibe(src)
+      .then(vibe => { if (vibe) setType(vibe); })
+      .catch(e => console.warn('[CreateView] vibe analysis failed:', e))
+      .finally(() => setVibeLoading(false));
   };
 
   return (
@@ -82,7 +90,10 @@ export default function CreateView({ active, collection, onSave, showToast }) {
               />
             </div>
             <div className="form-row">
-              <label className="form-label">Type / Vibe</label>
+              <label className="form-label">
+                Type / Vibe
+                {vibeLoading && <span className="vibe-analyzing"> ✦ analyzing...</span>}
+              </label>
               <input
                 className="form-input"
                 placeholder="Chronically Online · AFK IRL · Main character"

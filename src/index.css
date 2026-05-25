@@ -2415,3 +2415,39 @@ body::before {
   transition: filter 0.1s;
 }
 .ta-done-btn:active { filter: brightness(0.9); }
+
+/* ── AI trade button ───────────────────────────────────────────────────── */
+.btn-ai-trade {
+  background: linear-gradient(135deg, #6200ea, #aa00ff);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 3px 14px rgba(130,0,255,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 0.12s;
+}
+.btn-ai-trade:disabled { opacity: 0.45; cursor: default; }
+.btn-ai-trade:not(:disabled):active { filter: brightness(0.85); }
+
+/* Vibe auto-analyzing indicator in create form */
+.vibe-analyzing {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7a3fcf;
+  letter-spacing: 0.4px;
+  animation: vibeFlicker 1s ease-in-out infinite alternate;
+}
+@keyframes vibeFlicker {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
+}

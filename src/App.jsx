@@ -76,6 +76,8 @@ export default function App() {
           showToast={showToast}
           incomingTradeId={incomingTradeId}
           clearIncomingTrade={() => setIncomingTradeId(null)}
+          addCard={addCard}
+          removeCard={removeCard}
         />
       </div>
       <Toast message={toast.msg} toastKey={toast.key} />
