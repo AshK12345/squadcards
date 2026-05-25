@@ -84,7 +84,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
               <label className="form-label">Their Name</label>
               <input
                 className="form-input"
-                placeholder="Jake Peralta"
+                placeholder="Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -96,7 +96,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
               </label>
               <input
                 className="form-input"
-                placeholder="Chronically Online · AFK IRL · Main character"
+                placeholder="Type"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               />

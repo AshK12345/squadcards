@@ -2416,28 +2416,29 @@ body::before {
 }
 .ta-done-btn:active { filter: brightness(0.9); }
 
-/* ── AI trade button ───────────────────────────────────────────────────── */
+/* ── AI trade button — matches the flat retro visual language ─────────── */
 .btn-ai-trade {
-  background: linear-gradient(135deg, #6200ea, #aa00ff);
+  background: #7b2fff;
   color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 12px 20px;
+  border: 2px solid #1a1a1a;
+  border-radius: 8px;
+  padding: 11px 20px;
   font-family: 'Nunito', sans-serif;
   font-weight: 900;
   font-size: 14px;
   letter-spacing: 0.3px;
   cursor: pointer;
-  box-shadow: 0 3px 14px rgba(130,0,255,0.35);
+  box-shadow: 3px 3px 0 #1a1a1a;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   -webkit-tap-highlight-color: transparent;
-  transition: filter 0.12s;
+  transition: box-shadow 0.08s, transform 0.08s;
 }
-.btn-ai-trade:disabled { opacity: 0.45; cursor: default; }
-.btn-ai-trade:not(:disabled):active { filter: brightness(0.85); }
+.btn-ai-trade:hover  { box-shadow: 4px 4px 0 #1a1a1a; transform: translate(-1px,-1px); }
+.btn-ai-trade:active { transform: translate(2px,2px); box-shadow: none; }
+.btn-ai-trade:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: 3px 3px 0 #1a1a1a; }
 
 /* Vibe auto-analyzing indicator in create form */
 .vibe-analyzing {

@@ -127,10 +127,11 @@ export async function evaluateStats(name, type, photoSrc = null, collection = []
 
 // Analyse an uploaded photo and return a brainrot Type/Vibe string
 export async function analyzePhotoVibe(photoSrc) {
-  const prompt = `Look at this person's photo and write a short "Type / Vibe" label for a Gen Alpha friend trading card.
-Use gen alpha slang and brainrot internet lingo. Keep it under 8 words total, use · to separate 2-3 tags.
-Examples: "chronically online · main character energy", "sigma mindset · unhinged", "certified rizz lord · ick dealer", "NPC behavior · AFK IRL"
-Reply with ONLY the vibe string — no quotes, no explanation.`;
+  const prompt = `Look at this photo and write a "Type / Vibe" label for a Gen Alpha friend trading card. Go unhinged with the gen alpha / brainrot slang.
+Use terms like: no cap, lowkey, NPC, sigma, rizz, slay, understood the assignment, fr fr, main character, mid, ick, chronically online, AFK IRL, based, delulu, giving _____, ate and left no crumbs, etc.
+Be specific to what you see — their expression, energy, style.
+Under 8 words total, 2-3 punchy tags separated by ·.
+Return ONLY the vibe string — no quotes, no explanation, nothing else.`;
   const raw = await callClaude(prompt, 60, photoSrc);
   return raw.trim().replace(/^["']|["']$/g, '');
 }
@@ -173,7 +174,7 @@ export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, 
   const nameNote = firstName && firstName.toLowerCase() !== name.trim().toLowerCase()
     ? ` Refer to them as "${firstName}" (first name only), not the full card title.`
     : '';
-  const prompt = `TCG card flavor text for a friend. Each suggestion: 1–2 sentences, strictly under 25 words. Light roast, not mean.${nameNote}${photoLine}\n\n${squadContext}${memoryLine}Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}.\n\nOutput EXACTLY this and nothing else — no explanation, no markdown, no preamble:\n["suggestion 1","suggestion 2","suggestion 3","suggestion 4"]`;
+  const prompt = `TCG card flavor text for a real person. Max brainrot, max gen alpha energy — friend roast vibes, not mean.${nameNote}${photoLine}\n\n${squadContext}${memoryLine}Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}.\n\nUse gen alpha slang: no cap, lowkey, slay, NPC behavior, sigma, rizz, understood the assignment, fr fr, bussin, mid, ick, delulu, ate, giving _____, etc. Be specific to their vibe and stats. Each suggestion strictly under 25 words.\n\nOutput EXACTLY this and nothing else — no explanation, no markdown, no preamble:\n["suggestion 1","suggestion 2","suggestion 3","suggestion 4"]`;
   const text = await callClaude(prompt, 800, photoSrc);
   const cleaned = text.replace(/```json|```/g, '').trim();
   try {
