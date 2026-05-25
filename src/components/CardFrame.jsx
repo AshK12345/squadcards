@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useLayoutEffect } from 'react';
 import { HP_MAP, PIPS, fmtBi } from '../constants';
 
 const HOLO = new Set(['rare', 'legendary', 'secret']);
@@ -132,6 +132,7 @@ function generateGrainURL(seed) {
 export default function CardFrame({ card, index, noTilt = false, editImg = false, onImgChange }) {
   const wrapRef   = useRef(null);
   const frameRef  = useRef(null);
+  const nameRef   = useRef(null);
   const holoRef   = useRef(null);
   const sparkRef  = useRef(null);
   const grainRef  = useRef(null);
@@ -142,6 +143,19 @@ export default function CardFrame({ card, index, noTilt = false, editImg = false
   const pipCount = PIPS[card.rarity] ?? 1;
   // Seed priority: explicit grainSeed (preview/localStorage) → card id (Supabase) → name fallback
   const seed = card.grainSeed ?? dyeSeed(card.id ?? card.name ?? '');
+
+  // Shrink card name font until it fits — Yu-Gi-Oh style
+  useLayoutEffect(() => {
+    const el = nameRef.current;
+    if (!el) return;
+    el.style.fontSize = '';
+    const MIN = 7;
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > el.offsetWidth && size > MIN) {
+      size -= 0.5;
+      el.style.fontSize = `${size}px`;
+    }
+  }, [card.name]);
 
   // Generate grain texture after first paint (non-blocking)
   useEffect(() => {
@@ -286,7 +300,7 @@ export default function CardFrame({ card, index, noTilt = false, editImg = false
         <div className="card-rarity-stamp" />
 
         <div className="card-header">
-          <div className="card-name">{card.name}</div>
+          <div className="card-name" ref={nameRef}>{card.name}</div>
           <div className="card-hp">{HP_MAP[card.rarity]}</div>
         </div>
 

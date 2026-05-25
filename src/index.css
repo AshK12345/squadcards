@@ -194,7 +194,6 @@ body::before {
   color: #1a1a1a;
   flex: 1;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
