@@ -218,10 +218,10 @@ export default function TradesView({
       const aiData = await generateAIOpponentCard();
       const photo  = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖');
       const aiCardData = {
-        name:      aiData.name   || 'Glitch Entity',
-        type:      aiData.type   || 'unhinged · no cap · void spawn',
+        name:      (aiData.name   || 'Glitch Entity').slice(0, 22),
+        type:      (aiData.type   || 'unhinged · no cap · void spawn').slice(0, 42),
         rarity:    ['common','uncommon','rare'].includes(aiData.rarity) ? aiData.rarity : 'common',
-        flavor:    aiData.flavor || 'Spawned from corrupted data. Smells like burned WiFi.',
+        flavor:    (aiData.flavor || 'Spawned from corrupted data. Smells like burned WiFi.').slice(0, 85),
         photo,
         stats: DEFAULT_STATS.map(s => ({
           ...s,

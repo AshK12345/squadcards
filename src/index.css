@@ -95,7 +95,7 @@ body::before {
 .card-frame {
   position: relative;
   width: 230px;
-  height: 356px;
+  height: 380px;
   border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
@@ -292,7 +292,7 @@ body::before {
   z-index: 7;
   pointer-events: none;
   mix-blend-mode: multiply;
-  opacity: 0.17;
+  opacity: 0.15;
   background-size: cover;
   background-repeat: no-repeat;
 }
@@ -1563,7 +1563,7 @@ body::before {
 /* ghost card back face */
 .pof-card-back {
   width: 230px;
-  height: 356px;
+  height: 380px;
   border-radius: 14px;
   background: repeating-linear-gradient(
     135deg,
@@ -1997,7 +1997,7 @@ body::before {
 /* Mini card slot — scaled-down CardFrame */
 .trade-mini-card {
   width: 115px;
-  height: 178px;
+  height: 190px;
   overflow: hidden;
   border-radius: 8px;
   flex-shrink: 0;
@@ -2010,7 +2010,7 @@ body::before {
 }
 .trade-mini-slot {
   width: 115px;
-  height: 178px;
+  height: 190px;
   border-radius: 8px;
   border: 2.5px dashed rgba(0,0,0,0.15);
   background: rgba(0,0,0,0.03);
@@ -2139,7 +2139,7 @@ body::before {
 }
 .trf-card-wrap {
   width: min(230px, 70vw);
-  aspect-ratio: 230 / 356;
+  aspect-ratio: 230 / 380;
   position: relative;
   flex-shrink: 0;
 }
@@ -2262,8 +2262,8 @@ body::before {
   top: 50%;
   left: 50%;
   width: 230px;
-  height: 356px;
-  margin-top: -178px;
+  height: 380px;
+  margin-top: -190px;
   margin-left: -115px;
   z-index: 3;
 }
@@ -2286,13 +2286,13 @@ body::before {
 /* Spin wrapper: rotation only — single cubic bezier so no stutter */
 .ta-frisbee-spin {
   position: relative;
-  width: 230px; height: 356px;
+  width: 230px; height: 380px;
   animation: taFrisbeeSpin 2.0s linear forwards;
 }
 /* Spirograph SVG: inside spin element, fades in at release and lingers */
 .ta-spiro-svg {
   position: absolute; top: 0; left: 0;
-  width: 230px; height: 356px;
+  width: 230px; height: 380px;
   overflow: visible; pointer-events: none;
   opacity: 0;
   animation: taSpiroFade 2.0s linear forwards;

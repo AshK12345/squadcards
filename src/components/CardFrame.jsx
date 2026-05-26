@@ -148,13 +148,18 @@ export default function CardFrame({ card, index, noTilt = false, editImg = false
   useLayoutEffect(() => {
     const el = nameRef.current;
     if (!el) return;
-    el.style.fontSize = '';
-    const MIN = 7;
-    let size = parseFloat(getComputedStyle(el).fontSize);
-    while (el.scrollWidth > el.offsetWidth && size > MIN) {
-      size -= 0.5;
-      el.style.fontSize = `${size}px`;
-    }
+    const fit = () => {
+      el.style.fontSize = '';
+      const MIN = 7;
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      while (el.scrollWidth > el.offsetWidth && size > MIN) {
+        size -= 0.5;
+        el.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    // Re-measure after Nerko One finishes loading (avoids flash with late fonts)
+    document.fonts?.ready.then(fit);
   }, [card.name]);
 
   // Generate grain texture after first paint (non-blocking)
