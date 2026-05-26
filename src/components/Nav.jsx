@@ -9,7 +9,7 @@ export default function Nav({ activeView, onViewChange }) {
   return (
     <nav className="nav">
       <span className="nav-logo">
-        Squad<span>Cards</span> 🃏
+        Slop<span>Cards</span> 🃏
       </span>
       <div className="nav-tabs">
         {tabs.map((tab) => (

@@ -1,4 +1,4 @@
--- SquadCards schema
+-- Slop Cards schema
 -- Paste this into the Supabase SQL Editor and click Run
 
 create table if not exists cards (
