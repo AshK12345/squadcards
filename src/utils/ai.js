@@ -90,14 +90,15 @@ async function callClaude(prompt, maxTokens = 500, photoSrc = null) {
   return data.content.map(i => i.text || '').join('');
 }
 
-// Format a brief squad context line from other cards in the collection
+// Format a brief squad context line from other cards in the collection.
+// Limited to 4 entries so the AI doesn't over-reference obscure names.
 function buildSquadContext(collection = [], currentName = '') {
   const others = collection
     .filter(c => c.name?.toLowerCase() !== currentName?.toLowerCase())
-    .slice(-10);
+    .slice(-4);
   if (others.length === 0) return '';
   const list = others.map(c => `${c.name}${c.type ? ` (${c.type})` : ''}`).join(', ');
-  return `Other people already in this squad: ${list}. Feel free to reference dynamics, rivalries, or connections between squad members.\n\n`;
+  return `Squad context (use at most 1 reference per suggestion — only if the joke lands without knowing them): ${list}.\n\n`;
 }
 
 export async function evaluateStats(name, type, photoSrc = null, collection = [], memory = null) {
@@ -135,15 +136,16 @@ Reply with ONLY the vibe string — no quotes, no explanation.`;
   return raw.trim().replace(/^["']|["']$/g, '');
 }
 
-// Generate a fully AI-created brainrot opponent card for the AI trade feature
+// Generate a fully AI-created brainrot opponent card for the AI trade feature.
+// Rarity is intentionally NOT included — it's assigned randomly client-side
+// to prevent any rarity-matching exploit where trading a rare guarantees a rare back.
 export async function generateAIOpponentCard() {
   const prompt = `Generate a completely unhinged Gen Alpha / brainrot NPC trading card character. Maximum cringe and silliness.
 
 Output EXACTLY this JSON and nothing else — no markdown, no preamble:
-{"name":"silly 2-4 word gen alpha name","type":"brainrot vibe tags under 8 words","flavor":"cringe 1-2 sentence flavor under 25 words","rarity":"common","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
+{"name":"silly 2-4 word gen alpha name","type":"brainrot vibe tags under 8 words","flavor":"cringe 1-2 sentence flavor under 25 words","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
 
 Rules:
-- rarity must be exactly one of: "common", "uncommon", "rare"
 - rizz and aura: range -999 to 999, use wild extremes
 - clout and chuddness: range 0 to 999, use wild extremes
 - emoji: 3-4 emojis that capture this character's unhinged vibe`;
@@ -158,7 +160,7 @@ Rules:
   }
 }
 
-export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, collection = [], memory = null) {
+export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, collection = [], memory = null, tradePartners = []) {
   const statsStr = stats
     .map(s => `${s.name}: ${s.bipolar ? fmtBi(s.val) : s.val}`)
     .join(', ');
@@ -166,6 +168,9 @@ export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, 
     ? ' A photo of this person is attached — let it inspire the flavor text.'
     : '';
   const squadContext = buildSquadContext(collection, name);
+  const partnersLine = tradePartners.length > 0
+    ? `People this person has actually traded cards with (these names are fair game — both parties will get the joke): ${tradePartners.slice(0, 5).join(', ')}.\n\n`
+    : '';
   const memoryLine = memory?.flavors?.length > 0
     ? `Previously approved flavor texts that perfectly nailed this person's vibe — match this humor and tone:\n${memory.flavors.map(f => `  • "${f}"`).join('\n')}\n\n`
     : '';
@@ -173,7 +178,7 @@ export async function suggestFlavor(name, type, rarity, stats, photoSrc = null, 
   const nameNote = firstName && firstName.toLowerCase() !== name.trim().toLowerCase()
     ? ` Refer to them as "${firstName}" (first name only), not the full card title.`
     : '';
-  const prompt = `TCG card flavor text for a friend. Each suggestion: 1–2 sentences, strictly under 25 words. Light roast, not mean.${nameNote}${photoLine}\n\n${squadContext}${memoryLine}Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}.\n\nOutput EXACTLY this and nothing else — no explanation, no markdown, no preamble:\n["suggestion 1","suggestion 2","suggestion 3","suggestion 4"]`;
+  const prompt = `TCG card flavor text for a friend. Each suggestion: 1–2 sentences, strictly under 25 words. Light roast, not mean.${nameNote}${photoLine}\n\n${squadContext}${partnersLine}${memoryLine}Rarity: ${rarity}. Person: "${name}", Vibe: "${type}", Stats: ${statsStr}.\n\nIMPORTANT: Most suggestions should be self-contained and funny without knowing anyone. At most 1–2 suggestions may reference a name from squad/partners context.\n\nOutput EXACTLY this and nothing else — no explanation, no markdown, no preamble:\n["suggestion 1","suggestion 2","suggestion 3","suggestion 4"]`;
   const text = await callClaude(prompt, 800, photoSrc);
   const cleaned = text.replace(/```json|```/g, '').trim();
   try {

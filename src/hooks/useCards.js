@@ -19,31 +19,34 @@ function dbToCard(row) {
   };
 }
 
-export function useCards() {
+export function useCards(userId = null) {
   const deviceId = useDeviceId();
   const [cards, setCards]   = useState([]);
   const [loading, setLoading] = useState(true);
 
   /* ── initial load ── */
   useEffect(() => {
-    if (SUPABASE_ENABLED && deviceId) {
-      supabase
-        .from('cards')
-        .select('*')
-        .eq('device_id', deviceId)
+    if (SUPABASE_ENABLED && (userId || deviceId)) {
+      let query = supabase.from('cards').select('*');
+      if (userId) {
+        query = query.eq('user_id', userId);
+      } else {
+        query = query.eq('device_id', deviceId);
+      }
+      query
         .order('created_at')
         .then(({ data, error }) => {
           if (!error && data) setCards(data.map(dbToCard));
           setLoading(false);
         });
-    } else {
+    } else if (!SUPABASE_ENABLED) {
       // localStorage fallback
       try {
         setCards(JSON.parse(localStorage.getItem(LS_KEY) || '[]'));
       } catch { /* ignore */ }
       setLoading(false);
     }
-  }, [deviceId]);
+  }, [userId, deviceId]);
 
   /* ── add card (optimistic) ── */
   const addCard = useCallback(async (cardData) => {
@@ -67,17 +70,23 @@ export function useCards() {
       photoUrl = await uploadPhoto(cardData.photo, deviceId);
     }
 
+    const insertData = {
+      device_id: deviceId,
+      name:      cardData.name    || 'Unknown',
+      type:      cardData.type    || '',
+      rarity:    cardData.rarity  || 'common',
+      flavor:    cardData.flavor  || '',
+      photo_url: photoUrl,
+      stats:     cardData.stats   || [],
+    };
+
+    if (userId) {
+      insertData.user_id = userId;
+    }
+
     const { data, error } = await supabase
       .from('cards')
-      .insert({
-        device_id: deviceId,
-        name:      cardData.name    || 'Unknown',
-        type:      cardData.type    || '',
-        rarity:    cardData.rarity  || 'common',
-        flavor:    cardData.flavor  || '',
-        photo_url: photoUrl,
-        stats:     cardData.stats   || [],
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -90,7 +99,7 @@ export function useCards() {
     const realCard = { ...dbToCard(data), photo: photoUrl || cardData.photo };
     setCards(prev => prev.map(c => c.id === tempId ? realCard : c));
     return realCard;
-  }, [deviceId]);
+  }, [userId, deviceId]);
 
   /* ── remove card ── */
   const removeCard = useCallback(async (id) => {
@@ -106,11 +115,16 @@ export function useCards() {
 
   /* ── reload cards (e.g. after a trade completes) ── */
   const reloadCards = useCallback(async () => {
-    if (!SUPABASE_ENABLED || !deviceId) return;
-    const { data, error } = await supabase
-      .from('cards').select('*').eq('device_id', deviceId).order('created_at');
+    if (!SUPABASE_ENABLED || (!userId && !deviceId)) return;
+    let query = supabase.from('cards').select('*');
+    if (userId) {
+      query = query.eq('user_id', userId);
+    } else {
+      query = query.eq('device_id', deviceId);
+    }
+    const { data, error } = await query.order('created_at');
     if (!error && data) setCards(data.map(dbToCard));
-  }, [deviceId]);
+  }, [userId, deviceId]);
 
   return { cards, loading, addCard, removeCard, reloadCards };
 }

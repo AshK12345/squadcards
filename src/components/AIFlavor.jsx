@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { suggestFlavor } from '../utils/ai';
-import { getMemory, saveFlavor } from '../utils/aiMemory';
+import { getMemory, saveFlavor, getTradePartners } from '../utils/aiMemory';
 
 export default function AIFlavor({ name, type, rarity, stats, photoSrc, collection, onSelect }) {
   const [loading, setLoading] = useState(false);
@@ -13,7 +13,8 @@ export default function AIFlavor({ name, type, rarity, stats, photoSrc, collecti
     setError(false);
     try {
       const memory = getMemory(name);
-      const suggestions = await suggestFlavor(name || 'your friend', type || '', rarity, stats, photoSrc, collection || [], memory);
+      const tradePartners = getTradePartners();
+      const suggestions = await suggestFlavor(name || 'your friend', type || '', rarity, stats, photoSrc, collection || [], memory, tradePartners);
       setChips(suggestions);
     } catch (e) {
       console.error('[AIFlavor] suggestFlavor failed:', e);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { acceptTrade } from '../utils/trade';
 import CardFrame from './CardFrame';
+import ScLogo from './ScLogo';
 import { HP_MAP } from '../constants';
 
 const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
@@ -69,7 +70,7 @@ export default function TradeFlow({ trade, myCollection, myDeviceId, onDone, onC
                   {showFront ? (
                     <CardFrame card={initCard} index={0} noTilt />
                   ) : (
-                    <div className="pof-card-back"><TrfLogo /></div>
+                    <div className="pof-card-back"><ScLogo idPrefix="trf" /></div>
                   )}
                 </div>
               </div>
@@ -161,24 +162,3 @@ export default function TradeFlow({ trade, myCollection, myDeviceId, onDone, onC
   );
 }
 
-function TrfLogo() {
-  return (
-    <svg
-      className="pof-sc-logo"
-      viewBox="0 0 230 328"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="scGradTrf" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.38)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0.10)" />
-        </linearGradient>
-      </defs>
-      <text x="115" y="186" fontFamily="Nerko One, cursive" fontSize="178"
-        textAnchor="middle" dominantBaseline="central" fill="rgba(0,0,0,0.28)">SC</text>
-      <text x="115" y="185" fontFamily="Nerko One, cursive" fontSize="178"
-        textAnchor="middle" dominantBaseline="central" fill="url(#scGradTrf)">SC</text>
-    </svg>
-  );
-}

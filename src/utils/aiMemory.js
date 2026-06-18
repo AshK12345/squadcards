@@ -1,4 +1,5 @@
 const KEY = 'sc-ai-memory';
+const PARTNERS_KEY = 'sc-trade-partners';
 
 function load() {
   try { return JSON.parse(localStorage.getItem(KEY) || '{}'); }
@@ -42,4 +43,21 @@ export function saveStats(name, stats) {
   stats.forEach(s => { statMap[s.key] = s.val; });
   all[key] = { flavors: [], ...(all[key] || {}), stats: statMap };
   save(all);
+}
+
+/** Return the list of card names the user has actually traded with. */
+export function getTradePartners() {
+  try { return JSON.parse(localStorage.getItem(PARTNERS_KEY) || '[]'); }
+  catch { return []; }
+}
+
+/**
+ * Record the name from a card received in a trade (the partner's card).
+ * Keeps the 12 most recent unique names.
+ */
+export function saveTradePartner(cardName) {
+  if (!cardName) return;
+  const current = getTradePartners();
+  const updated = [...new Set([cardName, ...current])].slice(0, 12);
+  try { localStorage.setItem(PARTNERS_KEY, JSON.stringify(updated)); } catch {}
 }

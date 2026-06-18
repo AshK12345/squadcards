@@ -110,7 +110,7 @@ export async function executeTrade(trade) {
 }
 
 /* ── Each client claims their received card ── */
-export async function claimCard(trade, role, deviceId) {
+export async function claimCard(trade, role, deviceId, userId = null) {
   const isInit = role === 'initiator';
   const myCardId   = isInit ? trade.initiator_card_id   : trade.recipient_card_id;
   const received   = isInit ? trade.recipient_card_snapshot : trade.initiator_card_snapshot;
@@ -121,6 +121,7 @@ export async function claimCard(trade, role, deviceId) {
 
   const { data } = await supabase.from('cards').insert({
     device_id: deviceId,
+    user_id: userId || undefined,
     name: received.name, type: received.type,
     rarity: newRarity, flavor: received.flavor || '',
     photo_url: received.photo || null, stats: received.stats || [],

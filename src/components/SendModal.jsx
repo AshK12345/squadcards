@@ -14,9 +14,9 @@ export default function SendModal({ pack, packName, shareUrl, onClose }) {
     });
   };
 
-  const shareText     = () => window.open(`sms:?body=${encodeURIComponent(`yo ${to}, i made you a SquadCard pack 🃏\n"${packName}"\n${url}`)}`);
+  const shareText     = () => window.open(`sms:?body=${encodeURIComponent(`yo ${to}, i made you a SlopCard pack 🃏\n"${packName}"\n${url}`)}`);
   const shareWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(`yo ${to} 👀 i made you a card pack — "${packName}"\n${url}`)}`);
-  const shareEmail    = () => window.open(`mailto:?subject=${encodeURIComponent('You got a SquadCard pack 🃏')}&body=${encodeURIComponent(`Hey ${to},\n\nI made you a card pack called "${packName}"\n\nOpen it: ${url}\n\ndon't say i never gave you anything lmao`)}`);
+  const shareEmail    = () => window.open(`mailto:?subject=${encodeURIComponent('You got a SlopCard pack 🃏')}&body=${encodeURIComponent(`Hey ${to},\n\nI made you a card pack called "${packName}"\n\nOpen it: ${url}\n\ndon't say i never gave you anything lmao`)}`);
 
   return (
     <div

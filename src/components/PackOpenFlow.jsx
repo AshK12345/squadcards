@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import CardFrame from './CardFrame';
+import ScLogo from './ScLogo';
 import { RARITY_ORDER } from '../constants';
 
 // navigator.vibrate is Android Chrome only; silently no-ops on iOS/desktop
@@ -229,7 +230,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
                   zIndex: 20 - offset,
                 }}
               >
-                <div className="pof-card-back"><ScLogo /></div>
+                <div className="pof-card-back"><ScLogo idPrefix="pack" /></div>
               </div>
             ))}
 
@@ -257,7 +258,7 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
                   </div>
                 ) : (
                   <>
-                    <div className="pof-card-back"><ScLogo /></div>
+                    <div className="pof-card-back"><ScLogo idPrefix="pack" /></div>
                     <div className="pof-back-sheen" />
                   </>
                 )}
@@ -297,30 +298,5 @@ export default function PackOpenFlow({ pack, packName, onClose }) {
         >✕</button>
       )}
     </div>
-  );
-}
-
-/* SC logo — gradient fill (lit from top) gives raised 3D look without glitch */
-function ScLogo() {
-  return (
-    <svg
-      className="pof-sc-logo"
-      viewBox="0 0 230 328"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="scGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.38)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0.10)" />
-        </linearGradient>
-      </defs>
-      {/* 1px drop for depth */}
-      <text x="115" y="186" fontFamily="Nerko One, cursive" fontSize="178"
-        textAnchor="middle" dominantBaseline="central" fill="rgba(0,0,0,0.28)">SC</text>
-      {/* gradient main */}
-      <text x="115" y="185" fontFamily="Nerko One, cursive" fontSize="178"
-        textAnchor="middle" dominantBaseline="central" fill="url(#scGrad)">SC</text>
-    </svg>
   );
 }

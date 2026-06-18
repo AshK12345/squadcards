@@ -2451,3 +2451,159 @@ body::before {
   from { opacity: 0.5; }
   to   { opacity: 1; }
 }
+
+/* ─── AUTH MODAL ─── */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 16px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  background: #fff;
+  color: #1a1a1a;
+  border: 2.5px solid #1a1a1a;
+  box-shadow: 3px 3px 0 #1a1a1a;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-google:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #1a1a1a;
+}
+.btn-google:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #1a1a1a;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 700;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: #e0d8c8;
+}
+
+.auth-error {
+  font-size: 12px;
+  color: #e00;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.auth-at {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 800;
+  color: #888;
+  pointer-events: none;
+  font-size: 14px;
+}
+
+/* ─── USER MENU (Nav) ─── */
+.btn-signin {
+  padding: 6px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  background: #ff3b3b;
+  color: #fff;
+  border: 2.5px solid #1a1a1a;
+  box-shadow: 3px 3px 0 #1a1a1a;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-signin:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #1a1a1a;
+}
+.btn-signin:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #1a1a1a;
+}
+
+.user-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ff3b3b;
+  color: #fff;
+  font-family: 'Nerko One', cursive;
+  font-size: 16px;
+  font-weight: 700;
+  border: 2.5px solid #1a1a1a;
+  box-shadow: 2px 2px 0 #1a1a1a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.user-avatar:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #1a1a1a;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 2.5px solid #1a1a1a;
+  box-shadow: 4px 4px 0 #1a1a1a;
+  border-radius: 8px;
+  min-width: 160px;
+  z-index: 999;
+  overflow: hidden;
+}
+
+.user-dropdown-name {
+  padding: 10px 14px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #888;
+  border-bottom: 2px solid #e0d8c8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+.user-dropdown-item:hover {
+  background: #f5f0e8;
+}

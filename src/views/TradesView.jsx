@@ -5,16 +5,52 @@ import {
   fetchTrade, subscribeTrade,
 } from '../utils/trade';
 import { generateAIOpponentCard } from '../utils/ai';
+import { saveTradePartner } from '../utils/aiMemory';
 import CardFrame from '../components/CardFrame';
 import TradeAnimation from '../components/TradeAnimation';
 import { SUPABASE_ENABLED } from '../lib/supabase';
 import { HP_MAP, DEFAULT_STATS } from '../constants';
 
+// ── Brainrot theme pool ──────────────────────────────────────────────────────
+const BRAINROT_THEMES = [
+  'skibidi toilet final boss', 'sigma grindset emperor', 'NPC streamer going viral',
+  'fanum tax collector agent', 'gyatt apostle awakened', 'rizz lord anointed',
+  'delulu princess manifesting', 'ratio machine activated', 'ohio final boss unlocked',
+  'main character disorder type', 'looksmaxxing devotee ascended', 'aura farmer grinding',
+  'chat is this real guy', 'mewing master unlocked form', 'chronically online goblin mode',
+  'touch grass desperado', 'grimace shake survivor', 'patrick bateman cosplayer',
+  'red pill podcast enjoyer', 'rizzler supreme form', 'negative aura emitter cursed',
+  'brain worm manifestation IRL', 'edgelord final evolution', "it's giving creature",
+  'bus riding philosopher king', 'gym bro enlightened form', 'minecraft creeper in real life',
+  'sussy baka energy type', 'W rizz god mode', 'delulu to real life pipeline',
+];
+const BRAINROT_LS_KEY = 'sc-brainrot-recent';
+const BRAINROT_MAX_RECENT = 12;
+
+function pickBrainrotTheme() {
+  let recent = [];
+  try { recent = JSON.parse(localStorage.getItem(BRAINROT_LS_KEY) || '[]'); } catch {}
+  const available = BRAINROT_THEMES.filter(t => !recent.includes(t));
+  const pool = available.length > 0 ? available : BRAINROT_THEMES;
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+  const next = [picked, ...recent].slice(0, BRAINROT_MAX_RECENT);
+  try { localStorage.setItem(BRAINROT_LS_KEY, JSON.stringify(next)); } catch {}
+  return picked;
+}
+
+// Assign AI card rarity randomly — never influenced by the traded card.
+// 65% common, 25% uncommon, 10% rare.
+function randomAIRarity() {
+  const r = Math.random();
+  return r < 0.65 ? 'common' : r < 0.90 ? 'uncommon' : 'rare';
+}
+
 // Generate an image via Pollinations.ai (free, no API key needed).
 // Falls back to emoji canvas if the fetch fails.
-async function generateCardImage(name, type, emoji = '🤖') {
+async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
+  const themeNote = brainrotTheme ? `, channeling ${brainrotTheme}` : ', gen alpha brainrot meme';
   const imagePrompt = encodeURIComponent(
-    `${emoji} cartoon character: ${name}, ${type}, gen alpha brainrot meme energy, vibrant funny trading card art, digital art, no text, no words`
+    `${emoji} cartoon trading card character: ${name}, ${type}${themeNote}, vibrant internet culture digital art, no text, no words`
   );
   const seed = Math.floor(Math.random() * 99999);
   const url = `https://image.pollinations.ai/prompt/${imagePrompt}?width=512&height=512&nologo=true&seed=${seed}`;
@@ -49,7 +85,7 @@ const LS_KEY = 'sc-pending-trade';
 const BURST_RARITIES = new Set(['uncommon', 'rare', 'legendary', 'secret']);
 
 export default function TradesView({
-  active, collection, deviceId, reloadCards,
+  active, collection, deviceId, userId, reloadCards,
   showToast, incomingTradeId, clearIncomingTrade,
   addCard, removeCard,
 }) {
@@ -110,7 +146,12 @@ export default function TradesView({
     if (updated.status === 'completed') {
       if (claimedRef.current) return;
       claimedRef.current = true;
-      const res = await claimCard(updated, myRole, deviceId);
+      const res = await claimCard(updated, myRole, deviceId, userId);
+      // Save the partner's card name so flavor AI can reference real trade partners
+      const partnerSnap = myRole === 'initiator'
+        ? updated.recipient_card_snapshot
+        : updated.initiator_card_snapshot;
+      if (partnerSnap?.name) saveTradePartner(partnerSnap.name);
       await reloadCards();
       localStorage.removeItem(LS_KEY);
       setResult(res);
@@ -215,13 +256,16 @@ export default function TradesView({
     if (!picked) return;
     setPhase('ai-generating');
     try {
-      const aiData = await generateAIOpponentCard();
-      const photo  = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖');
+      const aiData        = await generateAIOpponentCard();
+      const brainrotTheme = pickBrainrotTheme();
+      const photo         = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
+      // Rarity assigned randomly — never derived from the traded card's rarity
+      const aiRarity = randomAIRarity();
       const aiCardData = {
-        name:      (aiData.name   || 'Glitch Entity').slice(0, 22),
-        type:      (aiData.type   || 'unhinged · no cap · void spawn').slice(0, 42),
-        rarity:    ['common','uncommon','rare'].includes(aiData.rarity) ? aiData.rarity : 'common',
-        flavor:    (aiData.flavor || 'Spawned from corrupted data. Smells like burned WiFi.').slice(0, 85),
+        name:   (aiData.name   || 'Glitch Entity').slice(0, 22),
+        type:   (aiData.type   || 'unhinged · no cap · void spawn').slice(0, 42),
+        rarity: aiRarity,
+        flavor: (aiData.flavor || 'Spawned from corrupted data. Smells like burned WiFi.').slice(0, 85),
         photo,
         stats: DEFAULT_STATS.map(s => ({
           ...s,
@@ -233,7 +277,7 @@ export default function TradesView({
       await addCard(aiCardData);
       if (picked?.id) await removeCard(picked.id);
       setMyCard(picked);
-      setResult({ newCard: aiCardData, upgraded: false, originalRarity: picked.rarity, newRarity: aiCardData.rarity });
+      setResult({ newCard: aiCardData, upgraded: false, originalRarity: picked.rarity, newRarity: aiRarity });
       setPhase('animating');
     } catch (e) {
       console.error('AI trade error:', e);

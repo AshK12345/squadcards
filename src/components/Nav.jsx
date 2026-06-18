@@ -1,4 +1,7 @@
-export default function Nav({ activeView, onViewChange }) {
+import ScLogo from './ScLogo';
+import UserMenu from './UserMenu';
+
+export default function Nav({ activeView, onViewChange, user, profile, onSignIn, onSignOut }) {
   const tabs = [
     { id: 'create',     label: '✏️ Create' },
     { id: 'collection', label: '📦 Cards'  },
@@ -9,7 +12,8 @@ export default function Nav({ activeView, onViewChange }) {
   return (
     <nav className="nav">
       <span className="nav-logo">
-        Slop<span>Cards</span> 🃏
+        <ScLogo idPrefix="nav" className="nav-logo-icon" />
+        Slop<span>Cards</span>
       </span>
       <div className="nav-tabs">
         {tabs.map((tab) => (
@@ -22,6 +26,7 @@ export default function Nav({ activeView, onViewChange }) {
           </button>
         ))}
       </div>
+      <UserMenu user={user} profile={profile} onSignIn={onSignIn} onSignOut={onSignOut} />
     </nav>
   );
 }
