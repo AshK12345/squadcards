@@ -6,5 +6,11 @@ const key  = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const SUPABASE_ENABLED = !!(url && key);
 
 export const supabase = SUPABASE_ENABLED
-  ? createClient(url, key)
+  ? createClient(url, key, {
+      auth: {
+        flowType: 'implicit',   // no PKCE verifier needed — works across mail apps / new tabs
+        detectSessionInUrl: true,
+        persistSession: true,
+      },
+    })
   : null;
