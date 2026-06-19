@@ -277,6 +277,9 @@ body::before {
 /* Edit / crop mode */
 .card-img-edit { cursor: grab; }
 .card-img-edit:active { cursor: grabbing; }
+.card-img-tappable { cursor: pointer; }
+.card-img-tappable:hover .card-img-edit-hint { opacity: 1; }
+.card-img-tappable .card-img-edit-hint { opacity: 0.7; transition: opacity 0.15s; }
 
 .card-img-edit-hint {
   position: absolute;
@@ -306,6 +309,13 @@ body::before {
   opacity: 0.15;
   background-size: cover;
   background-repeat: no-repeat;
+}
+
+/* Common + uncommon have no holographic shine, so grain at full 0.15 looks heavy.
+   Pull it back 2.5pp so it reads as texture not mud. */
+.rarity-common   .card-grain-layer,
+.rarity-uncommon .card-grain-layer {
+  opacity: 0.125;
 }
 
 .card-type-line {
@@ -2480,6 +2490,92 @@ body::before {
   from { opacity: 0.5; }
   to   { opacity: 1; }
 }
+
+/* ─── IMAGE CROP MODAL ─── */
+.crop-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.crop-modal {
+  background: #fff;
+  border-radius: 14px;
+  border: 3px solid #1a1a1a;
+  box-shadow: 6px 8px 0 #1a1a1a;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+}
+
+.crop-title {
+  font-family: 'Fredoka One', sans-serif;
+  font-size: 18px;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.crop-outer {
+  position: relative;
+  background: #111;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.crop-outer:active { cursor: grabbing; }
+
+.crop-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.crop-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.crop-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #1a1a1a;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.crop-btn:hover  { background: #f5f0e8; }
+.crop-btn:active { transform: scale(0.93); }
+
+.crop-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.crop-actions .btn { flex: 1; justify-content: center; }
 
 /* ─── AUTH MODAL ─── */
 .auth-tabs {

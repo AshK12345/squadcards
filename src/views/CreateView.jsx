@@ -5,6 +5,7 @@ import PhotoUpload from '../components/PhotoUpload';
 import StatsSection from '../components/StatsSection';
 import AIFlavor from '../components/AIFlavor';
 import CardFrame from '../components/CardFrame';
+import ImageCropModal from '../components/ImageCropModal';
 import { saveStats } from '../utils/aiMemory';
 import { analyzePhotoVibe } from '../utils/ai';
 
@@ -13,9 +14,11 @@ export default function CreateView({ active, collection, onSave, showToast }) {
   const [type, setType] = useState('');
   const [flavor, setFlavor] = useState('');
   const [rarity, setRarity] = useState('common');
-  const [photoSrc, setPhotoSrc] = useState(null);
+  const [photoSrc, setPhotoSrc] = useState(null);       // displayed / baked photo
+  const [originalPhoto, setOriginalPhoto] = useState(null); // always the raw upload
+  const [showCrop, setShowCrop] = useState(false);
   const [stats, setStats] = useState(DEFAULT_STATS.map((s) => ({ ...s })));
-  const [aiKey, setAiKey] = useState(0); // increment to remount AIFlavor and clear chips
+  const [aiKey, setAiKey] = useState(0);
   const [grainSeed] = useState(() => Math.floor(Math.random() * 9999));
   const [imgX, setImgX]         = useState(0);
   const [imgY, setImgY]         = useState(0);
@@ -35,12 +38,6 @@ export default function CreateView({ active, collection, onSave, showToast }) {
     imgScale,
   };
 
-  const handleImgChange = ({ dx, dy, ds }) => {
-    setImgX(x => x + dx);
-    setImgY(y => y + dy);
-    setImgScale(s => Math.max(0.5, Math.min(4, s * ds)));
-  };
-
   const handleStatChange = useCallback((index, val) => {
     setStats((prev) => prev.map((s, i) => (i === index ? { ...s, val } : s)));
   }, []);
@@ -57,6 +54,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
     setFlavor('');
     setRarity('common');
     setPhotoSrc(null);
+    setOriginalPhoto(null);
     setStats(DEFAULT_STATS.map((s) => ({ ...s })));
     setAiKey(k => k + 1);
     setImgX(0); setImgY(0); setImgScale(1);
@@ -64,6 +62,7 @@ export default function CreateView({ active, collection, onSave, showToast }) {
 
   const handlePhoto = (src) => {
     setPhotoSrc(src);
+    setOriginalPhoto(src);   // keep original for re-cropping
     setImgX(0); setImgY(0); setImgScale(1);
     // Auto-generate vibe from photo in the background
     setVibeLoading(true);
@@ -71,6 +70,13 @@ export default function CreateView({ active, collection, onSave, showToast }) {
       .then(vibe => { if (vibe) setType(vibe); })
       .catch(e => console.warn('[CreateView] vibe analysis failed:', e))
       .finally(() => setVibeLoading(false));
+  };
+
+  // Baked crop result — replaces displayed photo, resets position transforms
+  const handleCropSave = (bakedSrc) => {
+    setPhotoSrc(bakedSrc);
+    setImgX(0); setImgY(0); setImgScale(1);
+    setShowCrop(false);
   };
 
   return (
@@ -166,11 +172,28 @@ export default function CreateView({ active, collection, onSave, showToast }) {
           <CardFrame
             card={cardData}
             index={collection.length}
-            editImg={!!photoSrc}
-            onImgChange={handleImgChange}
+            onImgClick={photoSrc ? () => setShowCrop(true) : undefined}
           />
+          {photoSrc && (
+            <button
+              className="btn btn-secondary"
+              style={{ marginTop: 8, fontSize: 12, padding: '6px 14px' }}
+              onClick={() => setShowCrop(true)}
+              type="button"
+            >
+              ✂️ Crop / Rotate
+            </button>
+          )}
         </div>
       </div>
+
+      {showCrop && originalPhoto && (
+        <ImageCropModal
+          src={originalPhoto}
+          onSave={handleCropSave}
+          onCancel={() => setShowCrop(false)}
+        />
+      )}
     </div>
   );
 }

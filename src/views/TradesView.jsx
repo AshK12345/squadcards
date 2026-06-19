@@ -69,32 +69,59 @@ function pickBrainrotTheme() {
 
 // ── Art style pool ───────────────────────────────────────────────────────────
 const ART_STYLES = [
-  'anime cel-shaded vibrant',
-  '16-bit pixel art retro',
-  'oil painting impressionist thick brushstrokes',
-  'vaporwave retro glowing aesthetic',
-  'comic book halftone bold ink',
-  'loose watercolor splashing',
-  'graffiti spray-paint street art',
-  'Pixar 3D render glossy',
-  'ukiyo-e woodblock print flat',
-  'synthwave neon grid 80s',
-  'Studio Ghibli soft illustration',
-  'low poly geometric faceted',
-  'glitch art corrupted scanlines',
-  'bold sticker art thick outline',
-  'neon sign glow dark background',
-  'pencil sketch crosshatch detailed',
-  'pop art bold primary colors',
-  'chibi kawaii exaggerated cute',
-  'dark fantasy dramatic oil painting',
-  'cyberpunk neon noir rain-slicked',
-  'flat design minimalist clean',
-  'abstract expressionist splatter',
+  // ── 2D illustrated ──
+  'bold flat 2D cartoon illustration, bright colors',
+  'anime cel-shaded 2D, vibrant colors, clean lines',
+  'comic book halftone 2D, bold ink outlines',
+  'loose watercolor 2D illustration, splashing pigment',
+  'ukiyo-e woodblock 2D, flat Japanese print style',
+  'pop art bold 2D, Warhol primary colors halftone',
+  'chibi kawaii 2D, exaggerated cute proportions',
+  'thick-outline sticker art 2D, die-cut style',
+  'Hanna-Barbera retro 2D cartoon, Saturday morning vibes',
+  'graffiti spray-paint 2D, street art style',
+  // ── 3D rendered ──
+  'Pixar 3D render, glossy colorful character art',
+  'low poly geometric 3D, faceted crystal style',
+  'claymation 3D, stop-motion clay figure style',
+  'Nintendo Switch 3D game art style, toon shading',
+  'Fortnite 3D character art, chunky stylized',
+  'hyper-realistic 3D digital sculpt, detailed render',
+  // ── stylised / painterly ──
+  'Studio Ghibli soft painterly, warm background',
+  'vaporwave retro glowing aesthetic, pink and teal',
+  'synthwave neon grid 80s, electric glow',
+  'cyberpunk neon noir, rain-slicked dark city',
+  'dark fantasy oil painting, dramatic lighting',
+  'pencil sketch crosshatch, detailed linework',
+  'glitch art corrupted scanlines, digital artifact',
+  'abstract expressionist colorful splatter',
+];
+
+// ── Brainrot character likenesses for mashup prompts ─────────────────────────
+const BRAINROT_CHARACTERS = [
+  { name: 'Tralalero Tralala',    desc: 'great white shark wearing Adidas sneakers walking upright on two legs' },
+  { name: 'Bombardiro Crocodilo', desc: 'green crocodile fused with a WWII bomber aircraft body with wings' },
+  { name: 'Cappuccino Assassino', desc: 'giant sentient cappuccino cup wielding a blade, assassin energy' },
+  { name: 'Tung Tung Sahur',      desc: 'chaotic wooden stick-figure humanoid drumming on everything' },
+  { name: 'Brr Brr Patapim',      desc: 'tiny blue fuzzy gremlin with huge googly eyes patting random things' },
+  { name: 'La Vaca Saturno',      desc: 'cow wearing Saturn\'s planetary rings as a glowing halo crown' },
+  { name: 'Frigo Camelo',         desc: 'dromedary camel fused with a refrigerator torso, door swinging open' },
+  { name: 'Ballerina Cappuccina', desc: 'ballerina dancer whose torso is a cappuccino cup, tutu and steam' },
+  { name: 'Lirili Larila',        desc: 'majestic camel-elephant hybrid creature standing on a mountaintop' },
+  { name: 'Shimpanzini Bananini', desc: 'chimpanzee wearing a full banana peel suit doing parkour' },
+  { name: 'Burbaloni Luliloli',   desc: 'round translucent bubble creature with tiny limbs floating around' },
+  { name: 'Trippi Troppi',        desc: 'trippy colorful abstract blob with googly eyes and noodle arms' },
 ];
 
 function pickArtStyle() {
   return ART_STYLES[Math.floor(Math.random() * ART_STYLES.length)];
+}
+
+function maybePickCharacter() {
+  // 35% chance of injecting a brainrot character mashup into the prompt
+  if (Math.random() > 0.35) return null;
+  return BRAINROT_CHARACTERS[Math.floor(Math.random() * BRAINROT_CHARACTERS.length)];
 }
 
 // Assign AI card rarity randomly — never influenced by the traded card.
@@ -108,9 +135,13 @@ function randomAIRarity() {
 // Falls back to emoji canvas if the fetch fails.
 async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
   const artStyle  = pickArtStyle();
-  const themeNote = brainrotTheme ? `, channeling ${brainrotTheme}` : ', gen alpha brainrot energy';
+  const character = maybePickCharacter();
+  const themeNote = brainrotTheme ? `, ${brainrotTheme} energy` : '';
+  const charNote  = character
+    ? `, depicted as ${character.name} (${character.desc})`
+    : '';
   const imagePrompt = encodeURIComponent(
-    `${artStyle} style: ${emoji} trading card character — ${name}, ${type}${themeNote}, vibrant expressive portrait, no text, no words, no logos`
+    `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${charNote}${themeNote}, expressive portrait, colorful, no text, no words, no logos`
   );
   const seed = Math.floor(Math.random() * 99999);
   const url = `https://image.pollinations.ai/prompt/${imagePrompt}?width=512&height=512&nologo=true&seed=${seed}`;

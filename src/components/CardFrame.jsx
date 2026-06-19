@@ -129,7 +129,7 @@ function generateGrainURL(seed) {
   return canvas.toDataURL();
 }
 
-export default function CardFrame({ card, index, noTilt = false, editImg = false, onImgChange }) {
+export default function CardFrame({ card, index, noTilt = false, editImg = false, onImgChange, onImgClick }) {
   const wrapRef   = useRef(null);
   const frameRef  = useRef(null);
   const nameRef   = useRef(null);
@@ -310,7 +310,8 @@ export default function CardFrame({ card, index, noTilt = false, editImg = false
         </div>
 
         <div
-          className={`card-img-wrap${editImg ? ' card-img-edit' : ''}`}
+          className={`card-img-wrap${editImg ? ' card-img-edit' : ''}${onImgClick && card.photo ? ' card-img-tappable' : ''}`}
+          onClick={onImgClick && card.photo ? onImgClick : undefined}
           onPointerDown={editImg ? onImgPointerDown : undefined}
           onPointerMove={editImg ? onImgPointerMove : undefined}
           onPointerUp={editImg ? onImgPointerUp : undefined}
@@ -335,6 +336,9 @@ export default function CardFrame({ card, index, noTilt = false, editImg = false
           <div className="card-img-placeholder" style={card.photo ? { display: 'none' } : {}}>👤</div>
           {editImg && card.photo && (
             <div className="card-img-edit-hint">✋ drag · scroll to zoom</div>
+          )}
+          {onImgClick && card.photo && (
+            <div className="card-img-edit-hint">✏️ tap to crop</div>
           )}
         </div>
 
