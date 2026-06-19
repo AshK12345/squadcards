@@ -31,10 +31,18 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  /** Sign up with email + password. Returns error or null. */
+  /**
+   * Sign up with email + password.
+   * Returns { error, needsConfirmation }.
+   * needsConfirmation=true means Supabase sent a confirmation email (confirm email is ON).
+   * needsConfirmation=false means the user is already logged in (confirm email is OFF).
+   */
   const signUp = async (email, password) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return error ?? null;
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { error, needsConfirmation: false };
+    // If session is null, Supabase is waiting for email confirmation
+    const needsConfirmation = !data.session;
+    return { error: null, needsConfirmation };
   };
 
   /**

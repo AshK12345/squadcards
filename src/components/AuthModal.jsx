@@ -31,9 +31,9 @@ export default function AuthModal({ onClose, auth, deviceId }) {
   const [deviceCount, setDeviceCount] = useState(0);
   const [claimBusy, setClaimBusy]     = useState(false);
 
-  // Advance when auth state resolves
+  // Advance when auth state resolves (covers both sign-in and confirm-email-off sign-up)
   useEffect(() => {
-    if (user && !profile && (step === 'auth')) setStep('username');
+    if (user && !profile && (step === 'auth' || step === 'verify-email')) setStep('username');
   }, [user, profile]);
 
   // Count device cards when reaching claim step
@@ -63,16 +63,15 @@ export default function AuthModal({ onClose, auth, deviceId }) {
     if (suPass !== suPass2) { setSuErr('Passwords do not match.'); return; }
     if (suPass.length < 6)  { setSuErr('Password must be at least 6 characters.'); return; }
     setSuBusy(true); setSuErr('');
-    const err = await signUp(suEmail.trim(), suPass);
+    const { error, needsConfirmation } = await signUp(suEmail.trim(), suPass);
     setSuBusy(false);
-    if (err) {
-      setSuErr(err.message || 'Sign up failed.');
-    } else {
-      // Supabase may auto-confirm depending on your settings.
-      // If email confirmation is off, user is logged in immediately → useEffect handles it.
-      // If on, show a note.
+    if (error) {
+      setSuErr(error.message || 'Sign up failed.');
+    } else if (needsConfirmation) {
+      // Email confirmation is ON in Supabase — user must click the link first
       setStep('verify-email');
     }
+    // If needsConfirmation=false, onAuthStateChange fires and useEffect advances to 'username'
   };
 
   const handleUsername = async (e) => {
