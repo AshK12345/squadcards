@@ -31,18 +31,30 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = () =>
-    supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname },
-    });
+  /** Sign up with email + password. Returns error or null. */
+  const signUp = async (email, password) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    return error ?? null;
+  };
 
-  const signInWithEmail = async (email) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin + window.location.pathname },
-    });
-    return error;
+  /**
+   * Sign in with username (or email) + password.
+   * If the input has no '@', treats it as a username and looks up the email
+   * from the profiles table first.
+   */
+  const signIn = async (usernameOrEmail, password) => {
+    let email = usernameOrEmail.trim();
+    if (!email.includes('@')) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', email.toLowerCase())
+        .maybeSingle();
+      if (!data?.email) return { message: 'Username not found. Check the spelling or sign up.' };
+      email = data.email;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error ?? null;
   };
 
   const signOut = () => supabase.auth.signOut();
@@ -52,7 +64,7 @@ export function useAuth() {
     const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
     const { data, error } = await supabase
       .from('profiles')
-      .insert({ id: user.id, username: clean })
+      .insert({ id: user.id, username: clean, email: user.email })
       .select().single();
     if (!error) setProfile(data);
     return { data, error };
@@ -84,8 +96,8 @@ export function useAuth() {
   return {
     user,
     profile,
-    signInWithGoogle,
-    signInWithEmail,
+    signUp,
+    signIn,
     signOut,
     createProfile,
     countDeviceCards,

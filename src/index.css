@@ -2453,6 +2453,31 @@ body::before {
 }
 
 /* ─── AUTH MODAL ─── */
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #2a2a2a;
+}
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-family: 'Fredoka One', sans-serif;
+  font-size: 15px;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.auth-tab:hover { color: #ccc; }
+.auth-tab.active {
+  color: #ff3b3b;
+  border-bottom-color: #ff3b3b;
+}
+
 .auth-error {
   font-size: 12px;
   color: #e00;
