@@ -48,12 +48,23 @@ body::before {
 }
 
 .nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: 'Nerko One', cursive;
   font-size: 24px;
   color: #1a1a1a;
+  flex-shrink: 0;
 }
 
 .nav-logo span { color: #ff3b3b; }
+
+.nav-logo-icon {
+  height: 48px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
 
 .nav-tabs {
   display: flex;
@@ -1207,17 +1218,35 @@ body::before {
 
 /* ─── MOBILE RESPONSIVE ─── */
 @media (max-width: 700px) {
+  /* Two-row nav: logo+signin on top, tabs centred below */
   .nav {
-    padding: 10px 14px;
-    gap: 10px;
+    padding: 10px 14px 8px;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
-  .nav-logo { font-size: 19px; }
+  .nav-logo {
+    font-size: 19px;
+    flex: 1;           /* grows to fill row 1 */
+  }
+
+  .nav-logo-icon { height: 40px; }
+
+  /* UserMenu stays on row 1, right side (flex-shrink: 0 keeps it there) */
+
+  /* Tabs drop to row 2, full-width and centred */
+  .nav-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
 
   .nav-tab {
     padding: 7px 10px;
     font-size: 10px;
     letter-spacing: 0;
+    flex: 1;
+    text-align: center;
   }
 
   .view { padding: 14px 14px 20px; }
