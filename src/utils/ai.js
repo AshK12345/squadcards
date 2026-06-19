@@ -101,6 +101,28 @@ function buildSquadContext(collection = [], currentName = '') {
   return `Squad context (use at most 1 reference per suggestion — only if the joke lands without knowing them): ${list}.\n\n`;
 }
 
+// Refresh the brainrot theme pool via Claude — called non-blocking every 30 days.
+// Returns an array of ~50 brainrot theme strings or null on failure.
+export async function refreshBrainrotPool() {
+  const prompt = `Generate 50 short brainrot/gen-alpha/internet-culture theme phrases for a trading card app. These will be injected into AI image prompts to add variety.
+
+Each phrase should be 3-6 words, evocative, specific. Include a mix of:
+- Classic brainrot (skibidi, sigma, rizz, NPC, ohio, gyatt, fanum, etc.)
+- Italian brainrot characters (tralalero tralala, bombardiro crocodilo, cappuccino assassino, tung tung sahur, etc.)
+- 2025-2026 trends (chill guy, looksmaxxing, aura farming, glazing, gooning, yapping, etc.)
+- Internet archetypes (patrick bateman type, main character disorder, chronically online, etc.)
+
+Output EXACTLY a JSON array of 50 strings and nothing else — no markdown, no explanation:
+["phrase 1","phrase 2",...]`;
+  try {
+    const text = await callClaude(prompt, 1500);
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    const arr = JSON.parse(cleaned);
+    if (Array.isArray(arr) && arr.length >= 20) return arr;
+  } catch {}
+  return null;
+}
+
 export async function evaluateStats(name, type, photoSrc = null, collection = [], memory = null) {
   const photoLine = photoSrc
     ? 'An uploaded photo of this person is also attached — use visual cues (expression, style, energy) to influence the stats.\n\n'
@@ -143,9 +165,10 @@ export async function generateAIOpponentCard() {
   const prompt = `Generate a completely unhinged Gen Alpha / brainrot NPC trading card character. Maximum cringe and silliness.
 
 Output EXACTLY this JSON and nothing else — no markdown, no preamble:
-{"name":"silly 2-4 word gen alpha name","type":"brainrot vibe tags under 8 words","flavor":"cringe 1-2 sentence flavor under 25 words","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
+{"name":"silly 2-4 word gen alpha name","type":"short noun label","flavor":"cringe 1-2 sentence flavor under 25 words","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
 
 Rules:
+- type: 2-4 words MAX, noun-forward, punchy — like "NPC sigma overlord", "chaos goblin lord", "rizz demon activated", "skibidi villain arc". NO long sentences.
 - rizz and aura: range -999 to 999, use wild extremes
 - clout and chuddness: range 0 to 999, use wild extremes
 - emoji: 3-4 emojis that capture this character's unhinged vibe`;

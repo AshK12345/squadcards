@@ -4,7 +4,7 @@ import {
   setReady, executeTrade, claimCard, cancelLobby,
   fetchTrade, subscribeTrade,
 } from '../utils/trade';
-import { generateAIOpponentCard } from '../utils/ai';
+import { generateAIOpponentCard, refreshBrainrotPool } from '../utils/ai';
 import { saveTradePartner } from '../utils/aiMemory';
 import CardFrame from '../components/CardFrame';
 import TradeAnimation from '../components/TradeAnimation';
@@ -12,7 +12,9 @@ import { SUPABASE_ENABLED } from '../lib/supabase';
 import { HP_MAP, DEFAULT_STATS } from '../constants';
 
 // ── Brainrot theme pool ──────────────────────────────────────────────────────
-const BRAINROT_THEMES = [
+// Base list — updated June 2026. Background refresh keeps it current automatically.
+const BRAINROT_THEMES_BASE = [
+  // Classic brainrot
   'skibidi toilet final boss', 'sigma grindset emperor', 'NPC streamer going viral',
   'fanum tax collector agent', 'gyatt apostle awakened', 'rizz lord anointed',
   'delulu princess manifesting', 'ratio machine activated', 'ohio final boss unlocked',
@@ -21,21 +23,78 @@ const BRAINROT_THEMES = [
   'touch grass desperado', 'grimace shake survivor', 'patrick bateman cosplayer',
   'red pill podcast enjoyer', 'rizzler supreme form', 'negative aura emitter cursed',
   'brain worm manifestation IRL', 'edgelord final evolution', "it's giving creature",
-  'bus riding philosopher king', 'gym bro enlightened form', 'minecraft creeper in real life',
+  'bus riding philosopher king', 'gym bro enlightened form', 'minecraft creeper IRL',
   'sussy baka energy type', 'W rizz god mode', 'delulu to real life pipeline',
+  // 2025-2026 additions
+  'chill guy energy descended', 'glazing machine activated', 'gooning lord awakened',
+  'yapping apostle unlocked', 'villain arc speedrunner', 'caught in 4K supremacy',
+  'aura farming level 100', 'rent free in your head', 'fatherless behavior detected',
+  'rizz demon no printer', 'based NPC philosopher', 'certified ohio moment IRL',
+  'brain rot speedrunner type', 'no cap prophet ascended', 'certified glazer devotee',
+  // Italian brainrot characters
+  'tralalero tralala shark energy', 'bombardiro crocodilo air strike', 'cappuccino assassino vibes',
+  'tung tung sahur drumming chaos', 'brr brr patapim creature', 'la vaca saturno saturnita',
+  'frigo camelo frozen wanderer', 'ballerina cappuccina energy', 'burbaloni luliloli entity',
+  'glorbo frutiger anomaly', 'chimpanzee in tuxedo energy', 'crocodillo alligatore rising',
 ];
-const BRAINROT_LS_KEY = 'sc-brainrot-recent';
-const BRAINROT_MAX_RECENT = 12;
+
+const BRAINROT_LS_KEY    = 'sc-brainrot-recent';
+const BRAINROT_TERMS_KEY = 'sc-brainrot-terms';
+const BRAINROT_TS_KEY    = 'sc-brainrot-ts';
+const BRAINROT_MAX_RECENT = 14;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function getBrainrotPool() {
+  try {
+    const stored = localStorage.getItem(BRAINROT_TERMS_KEY);
+    if (stored) {
+      const arr = JSON.parse(stored);
+      if (Array.isArray(arr) && arr.length >= 20) return arr;
+    }
+  } catch {}
+  return BRAINROT_THEMES_BASE;
+}
 
 function pickBrainrotTheme() {
+  const pool = getBrainrotPool();
   let recent = [];
   try { recent = JSON.parse(localStorage.getItem(BRAINROT_LS_KEY) || '[]'); } catch {}
-  const available = BRAINROT_THEMES.filter(t => !recent.includes(t));
-  const pool = available.length > 0 ? available : BRAINROT_THEMES;
-  const picked = pool[Math.floor(Math.random() * pool.length)];
+  const available = pool.filter(t => !recent.includes(t));
+  const src = available.length > 0 ? available : pool;
+  const picked = src[Math.floor(Math.random() * src.length)];
   const next = [picked, ...recent].slice(0, BRAINROT_MAX_RECENT);
   try { localStorage.setItem(BRAINROT_LS_KEY, JSON.stringify(next)); } catch {}
   return picked;
+}
+
+// ── Art style pool ───────────────────────────────────────────────────────────
+const ART_STYLES = [
+  'anime cel-shaded vibrant',
+  '16-bit pixel art retro',
+  'oil painting impressionist thick brushstrokes',
+  'vaporwave retro glowing aesthetic',
+  'comic book halftone bold ink',
+  'loose watercolor splashing',
+  'graffiti spray-paint street art',
+  'Pixar 3D render glossy',
+  'ukiyo-e woodblock print flat',
+  'synthwave neon grid 80s',
+  'Studio Ghibli soft illustration',
+  'low poly geometric faceted',
+  'glitch art corrupted scanlines',
+  'bold sticker art thick outline',
+  'neon sign glow dark background',
+  'pencil sketch crosshatch detailed',
+  'pop art bold primary colors',
+  'chibi kawaii exaggerated cute',
+  'dark fantasy dramatic oil painting',
+  'cyberpunk neon noir rain-slicked',
+  'flat design minimalist clean',
+  'abstract expressionist splatter',
+];
+
+function pickArtStyle() {
+  return ART_STYLES[Math.floor(Math.random() * ART_STYLES.length)];
 }
 
 // Assign AI card rarity randomly — never influenced by the traded card.
@@ -48,9 +107,10 @@ function randomAIRarity() {
 // Generate an image via Pollinations.ai (free, no API key needed).
 // Falls back to emoji canvas if the fetch fails.
 async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
-  const themeNote = brainrotTheme ? `, channeling ${brainrotTheme}` : ', gen alpha brainrot meme';
+  const artStyle  = pickArtStyle();
+  const themeNote = brainrotTheme ? `, channeling ${brainrotTheme}` : ', gen alpha brainrot energy';
   const imagePrompt = encodeURIComponent(
-    `${emoji} cartoon trading card character: ${name}, ${type}${themeNote}, vibrant internet culture digital art, no text, no words`
+    `${artStyle} style: ${emoji} trading card character — ${name}, ${type}${themeNote}, vibrant expressive portrait, no text, no words, no logos`
   );
   const seed = Math.floor(Math.random() * 99999);
   const url = `https://image.pollinations.ai/prompt/${imagePrompt}?width=512&height=512&nologo=true&seed=${seed}`;
@@ -201,6 +261,20 @@ export default function TradesView({
   }, [incomingTradeId]);
 
   useEffect(() => () => subRef.current?.unsubscribe(), []);
+
+  /* ── 30-day brainrot pool refresh (non-blocking) ── */
+  useEffect(() => {
+    const ts = Number(localStorage.getItem(BRAINROT_TS_KEY) || 0);
+    if (Date.now() - ts < THIRTY_DAYS_MS) return;
+    // Fire and forget — never blocks UI
+    refreshBrainrotPool().then(terms => {
+      if (!terms) return;
+      try {
+        localStorage.setItem(BRAINROT_TERMS_KEY, JSON.stringify(terms));
+        localStorage.setItem(BRAINROT_TS_KEY, String(Date.now()));
+      } catch {}
+    });
+  }, []);
 
   /* ── Actions ── */
   const startTrade = async () => {

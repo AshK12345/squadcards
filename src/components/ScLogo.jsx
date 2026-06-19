@@ -13,7 +13,7 @@ export default function ScLogo({ idPrefix = 'sc', className = 'pof-sc-logo' }) {
   return (
     <svg
       className={className}
-      viewBox="0 0 230 328"
+      viewBox="0 0 230 380"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
@@ -57,12 +57,12 @@ export default function ScLogo({ idPrefix = 'sc', className = 'pof-sc-logo' }) {
         </radialGradient>
       </defs>
 
-      {/* Glow halo */}
-      <ellipse cx="115" cy="186" rx="90" ry="110" fill={`url(#${gRadial})`}/>
+      {/* Glow halo — centered on 230×380 card */}
+      <ellipse cx="115" cy="190" rx="90" ry="110" fill={`url(#${gRadial})`}/>
 
       {/* Layer 1 — ink bleed / stencil shadow */}
       <text
-        x="121" y="193"
+        x="121" y="197"
         fontFamily="Nerko One, cursive" fontSize="174"
         textAnchor="middle" dominantBaseline="central"
         fill="rgba(0,0,0,0.70)"
@@ -71,7 +71,7 @@ export default function ScLogo({ idPrefix = 'sc', className = 'pof-sc-logo' }) {
 
       {/* Layer 2 — main stippled spray fill */}
       <text
-        x="115" y="187"
+        x="115" y="190"
         fontFamily="Nerko One, cursive" fontSize="174"
         textAnchor="middle" dominantBaseline="central"
         fill={`url(#${gRed})`}
@@ -80,7 +80,7 @@ export default function ScLogo({ idPrefix = 'sc', className = 'pof-sc-logo' }) {
 
       {/* Layer 3 — rough overspray for edge density */}
       <text
-        x="115" y="187"
+        x="115" y="190"
         fontFamily="Nerko One, cursive" fontSize="174"
         textAnchor="middle" dominantBaseline="central"
         fill={`url(#${gRed})`}
@@ -90,7 +90,7 @@ export default function ScLogo({ idPrefix = 'sc', className = 'pof-sc-logo' }) {
 
       {/* Layer 4 — alpha gloss highlight */}
       <text
-        x="115" y="187"
+        x="115" y="190"
         fontFamily="Nerko One, cursive" fontSize="174"
         textAnchor="middle" dominantBaseline="central"
         fill={`url(#${gGlow})`}
