@@ -1,12 +1,32 @@
 import { fmtBi } from '../constants';
 
 /**
- * Extract the person's first name from a card title so the AI refers to
- * them naturally. e.g. "jack being dumb" → "Jack", "Jake Peralta" → "Jake".
+ * Return the first name only when the card title actually looks like a person's
+ * name. Phrases like "Did I Stutter" or "NPC Energy" should return '' so the
+ * AI receives the full title and doesn't treat the first word as a name.
+ *
+ * Heuristics:
+ *  - 3+ words → almost certainly a phrase, not a name
+ *  - Contains a common pronoun/article/verb → phrase
+ *  - All-caps single token → acronym/title, not a first name
  */
+const PHRASE_SIGNALS = new Set([
+  'i','me','my','we','us','you','your','it','its','he','she','they','them',
+  'the','a','an','is','are','was','were','be','been','being',
+  'did','do','does',"don't","didn't","doesn't",
+  'not','no','yes','so','if','but','and','or',
+  'to','of','in','on','at','by','for','with','from',
+  'will','would','can','could','should','shall','may','might','must','have','has','had',
+]);
+
 function firstNameOf(cardTitle) {
   if (!cardTitle?.trim()) return '';
-  const first = cardTitle.trim().split(/\s+/)[0];
+  const words = cardTitle.trim().split(/\s+/);
+  if (words.length >= 3) return '';                                         // phrase
+  if (words.some(w => PHRASE_SIGNALS.has(w.toLowerCase()))) return '';     // common word
+  const first = words[0];
+  // Lone all-caps token (e.g. "NPC") → treat as title not a name
+  if (first === first.toUpperCase() && first.length > 1) return '';
   return first.charAt(0).toUpperCase() + first.slice(1);
 }
 

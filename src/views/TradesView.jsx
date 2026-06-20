@@ -131,44 +131,19 @@ function randomAIRarity() {
   return r < 0.65 ? 'common' : r < 0.90 ? 'uncommon' : 'rare';
 }
 
-// Generate an image via Pollinations.ai (free, no API key needed).
-// Falls back to emoji canvas if the fetch fails.
-async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
+// Generate an image URL via Pollinations.ai (free, no API key).
+// Returns the URL directly — the <img> tag loads it natively, no fetch/blob
+// conversion needed. This avoids CORS failures, rate-limit timeouts, and the
+// dark-purple fallback canvas that was causing every card to look the same.
+function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
   const artStyle  = pickArtStyle();
   const character = maybePickCharacter();
   const themeNote = brainrotTheme ? `, ${brainrotTheme} energy` : '';
-  const charNote  = character
-    ? `, depicted as ${character.name} (${character.desc})`
-    : '';
-  const imagePrompt = encodeURIComponent(
-    `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${charNote}${themeNote}, expressive portrait, colorful, no text, no words, no logos`
-  );
-  const seed = Math.floor(Math.random() * 99999);
-  const url = `https://image.pollinations.ai/prompt/${imagePrompt}?width=512&height=512&nologo=true&seed=${seed}`;
-  try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(20000) });
-    if (!resp.ok) throw new Error('non-ok');
-    const blob = await resp.blob();
-    return await new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload  = () => res(reader.result);
-      reader.onerror = rej;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    // Fallback: draw emoji on a dark canvas
-    const S = 256;
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = S;
-    const ctx = canvas.getContext('2d');
-    const g = ctx.createLinearGradient(0, 0, S, S);
-    g.addColorStop(0, '#0d0d1f'); g.addColorStop(1, '#1a0a2e');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
-    ctx.font = `${S * 0.46}px serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(emoji, S / 2, S / 2);
-    return canvas.toDataURL('image/jpeg', 0.88);
-  }
+  // Keep character note short to avoid excessively long URLs
+  const charNote  = character ? `, as ${character.name} (${character.desc})` : '';
+  const prompt    = `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${charNote}${themeNote}, colorful expressive portrait, no text, no words`;
+  const seed      = Math.floor(Math.random() * 999999);
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true&seed=${seed}`;
 }
 const clampAI = (v, mn, mx) => Math.min(mx, Math.max(mn, Math.round(Number(v) || 0)));
 
@@ -363,7 +338,7 @@ export default function TradesView({
     try {
       const aiData        = await generateAIOpponentCard();
       const brainrotTheme = pickBrainrotTheme();
-      const photo         = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
+      const photo         = generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
       // Rarity assigned randomly — never derived from the traded card's rarity
       const aiRarity = randomAIRarity();
       const aiCardData = {
