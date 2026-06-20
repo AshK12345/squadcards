@@ -64,10 +64,13 @@ export function useCards(userId = null) {
       return tempCard;
     }
 
-    // Upload photo if it's a data URL
+    // Upload photo if it's a data URL; remote URLs (e.g. Pollinations) stored as-is
     let photoUrl = null;
     if (cardData.photo?.startsWith('data:')) {
       photoUrl = await uploadPhoto(cardData.photo, deviceId);
+    } else if (cardData.photo) {
+      // Remote URL — store directly so it survives page reloads
+      photoUrl = cardData.photo;
     }
 
     const insertData = {

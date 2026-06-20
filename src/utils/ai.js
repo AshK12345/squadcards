@@ -181,17 +181,45 @@ Reply with ONLY the vibe string — no quotes, no explanation.`;
 // Generate a fully AI-created brainrot opponent card for the AI trade feature.
 // Rarity is intentionally NOT included — it's assigned randomly client-side
 // to prevent any rarity-matching exploit where trading a rare guarantees a rare back.
+// Rotating pools so consecutive AI cards feel different
+const AI_CARD_ARCHETYPES = [
+  'an Italian brainrot creature (like Tralalero Tralala or Bombardiro Crocodilo) — give it a ridiculous Italian-sounding compound name',
+  'a sigma/alpha podcast bro who peaked in high school',
+  'a chronically online goblin who only communicates in memes',
+  'a delusional looksmaxxer convinced they are ascending',
+  'a chaotic gremlin who randomly yaps and can\'t be stopped',
+  'a cursed NPC stuck in a fetch quest loop forever',
+  'a villain arc speedrunner — started Monday, already evil',
+  'a gym rat with negative rizz but astronomical chuddness',
+  'a ratio machine — never loses, never explains',
+  'a main character who is clearly a side character',
+  'a touch-grass refugee who briefly went outside and regrets it',
+  'a Minecraft server admin who takes their power too seriously',
+  'a delulu manifestation coach with zero results',
+  'a fatherless behavior pioneer breaking new ground',
+  'an aura farmer with negative aura from over-farming',
+];
+
+let _aiArchetypeIdx = -1;
+function pickArchetype() {
+  _aiArchetypeIdx = (_aiArchetypeIdx + 1) % AI_CARD_ARCHETYPES.length;
+  return AI_CARD_ARCHETYPES[_aiArchetypeIdx];
+}
+
 export async function generateAIOpponentCard() {
-  const prompt = `Generate a completely unhinged Gen Alpha / brainrot NPC trading card character. Maximum cringe and silliness.
+  const archetype = pickArchetype();
+  const prompt = `Generate a trading card character who is: ${archetype}.
 
 Output EXACTLY this JSON and nothing else — no markdown, no preamble:
-{"name":"silly 2-4 word gen alpha name","type":"short noun label","flavor":"cringe 1-2 sentence flavor under 25 words","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
+{"name":"2-4 word character name","type":"short noun label","flavor":"1-2 sentence flavor under 25 words","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
 
 Rules:
-- type: 2-4 words MAX, noun-forward, punchy — like "NPC sigma overlord", "chaos goblin lord", "rizz demon activated", "skibidi villain arc". NO long sentences.
-- rizz and aura: range -999 to 999, use wild extremes
+- name: specific to this archetype, NOT generic. Avoid "Grimace", "Skibidi", "Rizz Lord" as standalone names — be creative and specific to the archetype
+- type: 2-4 words MAX, noun-forward — like "NPC sigma overlord", "chaos goblin lord", "delulu manifestor", "ratio machine activated"
+- rizz and aura: range -999 to 999, use wild extremes appropriate to this character
 - clout and chuddness: range 0 to 999, use wild extremes
-- emoji: 3-4 emojis that capture this character's unhinged vibe`;
+- emoji: 3-4 emojis that fit THIS specific character (not generic fire/skull)
+- flavor: lean into the specific archetype, make it funny and specific`;
   const text = await callClaude(prompt, 400);
   const cleaned = text.replace(/```json|```/g, '').replace(/[\u2212\u2013\u2014]/g, '-').trim();
   try {

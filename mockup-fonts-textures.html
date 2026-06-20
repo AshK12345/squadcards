@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SquadCards — Font & Texture Variants</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=Orbitron:wght@700;900&family=Chakra+Petch:wght@700&family=Barlow+Condensed:wght@700;900&family=Share+Tech+Mono&family=Fredoka+One&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #080810;
+  background-image:
+    repeating-linear-gradient(45deg,  rgba(255,255,255,0.012) 0, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 22px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.012) 0, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 22px);
+  color: #e8e0d0;
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  padding: 48px 24px 80px;
+}
+
+h1 {
+  text-align: center;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 52px;
+  letter-spacing: 5px;
+  color: #fff;
+  margin-bottom: 6px;
+  text-shadow: 3px 3px 0 rgba(255,59,59,0.9), 0 0 40px rgba(255,59,59,0.2);
+}
+.subtitle {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 16px;
+}
+.note {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.18);
+  margin-bottom: 56px;
+  font-style: italic;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 56px 40px;
+  justify-content: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ─────────────────────────────────────
+   CARD SLOT WRAPPER
+───────────────────────────────────── */
+.card-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.font-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+}
+.font-sub {
+  font-size: 8.5px;
+  color: rgba(255,255,255,0.2);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-align: center;
+  margin-top: -12px;
+}
+
+/* ─────────────────────────────────────
+   CARD STRUCTURE
+───────────────────────────────────── */
+.card-wrap {
+  width: 230px;
+  perspective: 650px;
+  position: relative;
+}
+
+.card {
+  width: 230px;
+  height: 356px;
+  border-radius: 14px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  cursor: pointer;
+  will-change: transform;
+  /* Card thickness: layered box-shadows simulate the paper edge */
+  box-shadow:
+    /* left paper edge */
+    -1px 0 0 rgba(220,205,170,1),
+    -2px 0 0 rgba(200,185,150,0.9),
+    -3px 0 0 rgba(175,160,130,0.8),
+    -4px 0 0 rgba(150,135,110,0.6),
+    /* bottom paper edge */
+    0 1px 0 rgba(200,185,150,0.9),
+    0 2px 0 rgba(175,160,130,0.8),
+    0 3px 0 rgba(150,135,110,0.6),
+    /* drop shadow */
+    6px 12px 28px rgba(0,0,0,0.65),
+    10px 18px 0 rgba(0,0,0,0.35);
+}
+
+/* ─── RARITY BACKGROUNDS ─── */
+.card.r-common {
+  background: radial-gradient(ellipse at 30% 12%, #fffdf4, #f6eacc 50%, #e6d6aa);
+}
+.card.r-uncommon {
+  background: radial-gradient(ellipse at 30% 12%, #f2fff4, #d2eed4 50%, #b2dab4);
+}
+.card.r-rare {
+  background: radial-gradient(ellipse at 30% 12%, #f0f5ff, #cad8ff 50%, #a6bcf6);
+}
+.card.r-legendary {
+  background: linear-gradient(145deg, #fffdf0, #ffe898, #fff6cc, #ffdc7e, #fffdf0);
+  background-size: 200% 200%;
+  animation: lbg 3.5s ease infinite;
+}
+.card.r-secret {
+  background: linear-gradient(135deg, #fff0ff, #e4dcff, #dcf4ff, #fff0ff);
+  background-size: 300% 300%;
+  animation: sbg 5s linear infinite;
+}
+@keyframes lbg  { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+@keyframes sbg  { 0%{background-position:0% 0%} 100%{background-position:100% 100%} }
+
+/* ─── PHYSICAL TEXTURE LAYERS ─── */
+
+/* 1. Fine grain (paper texture) */
+.card-grain {
+  position: absolute; inset: 0; z-index: 8; pointer-events: none; border-radius: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: 0.09;
+  mix-blend-mode: multiply;
+}
+
+/* 2. Directional scratches (fine horizontal lines) */
+.card-scratches {
+  position: absolute; inset: 0; z-index: 9; pointer-events: none; border-radius: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.008 0.9' numOctaves='1' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)' opacity='0.4'/%3E%3C/svg%3E");
+  opacity: 0.12;
+  mix-blend-mode: overlay;
+}
+
+/* 3. Static laminate (always-on gloss layer - top-left catch light) */
+.card-laminate {
+  position: absolute; inset: 0; z-index: 10; pointer-events: none; border-radius: 14px;
+  background:
+    linear-gradient(
+      142deg,
+      rgba(255,255,255,0.42) 0%,
+      rgba(255,255,255,0.18) 18%,
+      rgba(255,255,255,0.05) 38%,
+      transparent 55%,
+      rgba(0,0,0,0.03) 100%
+    );
+}
+
+/* 4. Dynamic specular — set by JS on hover */
+.card-specular {
+  position: absolute; inset: 0; z-index: 11; pointer-events: none; border-radius: 14px;
+  opacity: 0;
+  mix-blend-mode: soft-light;
+}
+
+/* 5. Rainbow foil — set by JS on hover (rare/legendary) */
+.card-foil {
+  position: absolute; inset: 0; z-index: 12; pointer-events: none; border-radius: 14px;
+  opacity: 0;
+  mix-blend-mode: color-dodge;
+}
+
+/* 6. Inner edge bevel (physical card edge feel) */
+.card-edge {
+  position: absolute; inset: 0; z-index: 13; pointer-events: none; border-radius: 14px;
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255,255,255,0.8),
+    inset -1px -1px 0 rgba(0,0,0,0.18),
+    inset 0 0 0 0.5px rgba(0,0,0,0.07);
+}
+
+/* 7. Corner wear — white brightening at corners = worn laminate */
+.card-corners {
+  position: absolute; inset: 0; z-index: 14; pointer-events: none; border-radius: 14px;
+  background:
+    radial-gradient(ellipse 28px 22px at 0% 0%,   rgba(255,255,255,0.30) 0%, transparent 100%),
+    radial-gradient(ellipse 20px 16px at 100% 0%,  rgba(255,255,255,0.18) 0%, transparent 100%),
+    radial-gradient(ellipse 16px 20px at 0% 100%,  rgba(255,255,255,0.14) 0%, transparent 100%),
+    radial-gradient(ellipse 22px 18px at 100% 100%,rgba(255,255,255,0.22) 0%, transparent 100%);
+}
+
+/* 8. Idle holo shimmer (rare/legendary only, always-on) */
+.holo-shimmer {
+  position: absolute; inset: 0; z-index: 9; pointer-events: none; border-radius: 14px;
+  background: linear-gradient(115deg,
+    transparent 20%,
+    rgba(255,0,128,0.07) 26%, rgba(0,200,255,0.07) 34%,
+    rgba(255,255,0,0.07) 42%, rgba(255,0,255,0.07) 50%,
+    transparent 56%
+  );
+  background-size: 250% 250%;
+  animation: holoShimmer 4s ease-in-out infinite;
+  mix-blend-mode: color-dodge;
+}
+.r-legendary .holo-shimmer {
+  background: linear-gradient(115deg,
+    transparent 20%,
+    rgba(255,215,0,0.14) 28%, rgba(255,165,0,0.14) 38%,
+    rgba(255,240,120,0.14) 48%, rgba(255,215,0,0.14) 58%,
+    transparent 64%
+  );
+  background-size: 250% 250%;
+}
+@keyframes holoShimmer { 0%,100%{background-position:0% 0%} 50%{background-position:100% 100%} }
+
+/* ─── RARITY CORNER STAMP ─── */
+.card-stamp {
+  position: absolute; top: 0; right: 0;
+  width: 0; height: 0; border-style: solid; z-index: 15; pointer-events: none;
+}
+.r-common .card-stamp    { border-width: 0 28px 28px 0; border-color: transparent #ca9a00 transparent transparent; }
+.r-uncommon .card-stamp  { border-width: 0 28px 28px 0; border-color: transparent #2a8a2a transparent transparent; }
+.r-rare .card-stamp      { border-width: 0 30px 30px 0; border-color: transparent #2563eb transparent transparent; }
+.r-legendary .card-stamp { border-width: 0 38px 38px 0; border-color: transparent #f59e0b transparent transparent; }
+.r-secret .card-stamp    { border-width: 0 38px 38px 0; border-color: transparent #c084fc transparent transparent; }
+
+/* ─── CARD CONTENT ─── */
+.card-header {
+  padding: 9px 10px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid rgba(26,26,26,0.45);
+  position: relative; z-index: 2;
+}
+.r-rare .card-header      { border-bottom-color: rgba(26,58,138,0.55); }
+.r-legendary .card-header { border-bottom-color: rgba(138,96,0,0.55); }
+.r-secret .card-header    { border-bottom-color: rgba(106,0,106,0.55); }
+
+/* The card name — font swapped per variant */
+.card-name {
+  font-size: 19px;
+  color: #1a1a1a;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1;
+  /* Subtle emboss */
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6), 0 -1px 0 rgba(0,0,0,0.12);
+}
+
+.card-hp {
+  font-family: 'Fredoka One', sans-serif;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 2px solid rgba(26,26,26,0.4);
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+.r-common .card-hp    { background: #ffd700; color: #1a1a1a; }
+.r-uncommon .card-hp  { background: #4caf50; color: #fff; }
+.r-rare .card-hp      { background: #2563eb; color: #fff; border-color: rgba(26,58,138,0.5); }
+.r-legendary .card-hp { background: #f59e0b; color: #1a1a1a; border-color: rgba(138,96,0,0.5); }
+.r-secret .card-hp    { background: linear-gradient(135deg,#c084fc,#60a5fa); color:#fff; border-color:rgba(106,0,106,0.5); }
+
+.card-img-wrap {
+  margin: 7px 8px 0;
+  height: 128px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgba(26,26,26,0.3);
+  background: linear-gradient(135deg, #d8ceb8, #c4b89e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  font-size: 42px;
+}
+/* Inner image highlight — makes it feel sunken+glossy */
+.card-img-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(148deg, rgba(255,255,255,0.30) 0%, transparent 45%);
+  pointer-events: none; z-index: 1;
+}
+.card-img-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(0,0,0,0.18), transparent);
+  pointer-events: none; z-index: 1;
+}
+
+.card-type-line {
+  padding: 3px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 6.5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #777;
+  position: relative; z-index: 2;
+}
+
+.card-text-box {
+  margin: 0 8px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(245,238,220,0.84));
+  border: 2px solid rgba(26,26,26,0.28);
+  border-radius: 8px;
+  padding: 6px 8px;
+  height: 72px;
+  overflow: hidden;
+  position: relative; z-index: 2;
+  /* Inner shadow makes it feel recessed */
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.08), inset 0 -1px 2px rgba(0,0,0,0.04);
+}
+.card-flavor {
+  font-size: 9px;
+  line-height: 1.55;
+  color: #333;
+  font-style: italic;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-stat-line {
+  font-family: 'Fredoka One', sans-serif;
+  font-size: 8.5px;
+  color: #555;
+  margin-top: 4px;
+  display: flex;
+  gap: 5px;
+}
+.card-stat-line .neg { color: #2563eb; }
+
+/* ─── METALLIC OVERBAR ─── */
+.card-footer-group { margin-top: auto; position: relative; z-index: 2; }
+
+.card-overbar {
+  height: 9px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(180deg, #b8b8b8 0%, #ececec 35%, #d8d8d8 62%, #aaaaaa 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 2px rgba(0,0,0,0.14);
+}
+/* Colored metallic bar for rare+ */
+.r-rare .card-overbar {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(90deg, #1a3aaa 0%, #6090ff 18%, #1a3aaa 36%, #90b0ff 52%, #1a3aaa 68%, #6090ff 84%, #1a3aaa 100%);
+  background-size: 100% 100%, 200% 100%;
+  animation: metalShift 3s linear infinite;
+}
+.r-legendary .card-overbar {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.65) 0%, transparent 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(90deg, #9a7200 0%, #ffe050 16%, #9a7200 32%, #ffd020 48%, #c8a000 64%, #ffe050 80%, #9a7200 100%);
+  background-size: 100% 100%, 200% 100%;
+  animation: metalShift 2s linear infinite;
+}
+.r-secret .card-overbar {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(90deg, #6a006a 0%, #d080ff 16%, #6a006a 32%, #b060ee 48%, #8a20aa 64%, #d080ff 80%, #6a006a 100%);
+  background-size: 100% 100%, 200% 100%;
+  animation: metalShift 2.5s linear infinite;
+}
+@keyframes metalShift { 0%{background-position:100% 100%,0% 0%} 100%{background-position:100% 100%,200% 0%} }
+
+.card-footer {
+  padding: 4px 10px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rarity-pip { display: flex; gap: 3px; }
+.pip {
+  width: 8px; height: 8px; border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.35);
+}
+.r-common .pip    { background: #ffd700; }
+.r-uncommon .pip  { background: #4caf50; }
+.r-rare .pip      { background: #2563eb; }
+.r-legendary .pip { background: #f59e0b; }
+.r-secret .pip    { background: linear-gradient(135deg,#c084fc,#60a5fa); }
+
+.card-set-stamp {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 7px; color: rgba(0,0,0,0.32);
+  text-align: center; flex: 1;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.card-number {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 7px; color: #aaa;
+}
+.card-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 5.5px; color: rgba(0,0,0,0.26);
+  text-align: center; padding: 0 10px 6px;
+  letter-spacing: 0.2px; position: relative; z-index: 2;
+}
+
+/* ─────────────────────────────────────
+   FONT VARIANTS  (card-name only)
+───────────────────────────────────── */
+.f-bebas    .card-name { font-family: 'Bebas Neue', cursive;           font-size: 21px;  letter-spacing: 2.5px; }
+.f-chakra   .card-name { font-family: 'Chakra Petch', sans-serif;      font-size: 14px;  font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+.f-barlow   .card-name { font-family: 'Barlow Condensed', sans-serif;  font-size: 21px;  font-weight: 900; letter-spacing: 2px;   text-transform: uppercase; }
+.f-sharetech .card-name{ font-family: 'Share Tech Mono', monospace;    font-size: 12.5px;letter-spacing: 0; text-transform: uppercase; }
+.f-plex     .card-name { font-family: 'IBM Plex Mono', monospace;      font-size: 12px;  font-weight: 700; letter-spacing: -0.5px; text-transform: uppercase; }
+.f-orbitron .card-name { font-family: 'Orbitron', sans-serif;          font-size: 10.5px;font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* ─────────────────────────────────────
+   HOVER: no CSS transform — JS handles
+───────────────────────────────────── */
+.r-rare .card:hover,
+.r-legendary .card:hover,
+.r-secret .card:hover {
+  /* foil cards: JS tilt only, suppress CSS hover */
+}
+</style>
+</head>
+<body>
+
+<h1>SquadCards</h1>
+<p class="subtitle">Font &amp; Texture Variants — Prototype</p>
+<p class="note">Hover to see specular, tilt, and foil effects &middot; All 6 fonts on the card name &middot; Same card, different feel</p>
+
+<div class="grid">
+
+  <!-- ── 1. BEBAS NEUE ── -->
+  <div class="card-slot">
+    <div class="card-wrap f-bebas">
+      <div class="card r-rare">
+        <div class="card-grain"></div>
+        <div class="card-scratches"></div>
+        <div class="holo-shimmer"></div>
+        <div class="card-laminate"></div>
+        <div class="card-specular"></div>
+        <div class="card-foil"></div>
+        <div class="card-edge"></div>
+        <div class="card-corners"></div>
+        <div class="card-stamp"></div>
+
+        <div class="card-header">
+          <div class="card-name">Alex Chen</div>
+          <div class="card-hp">320HP</div>
+        </div>
+        <div class="card-img-wrap">👤</div>
+        <div class="card-type-line">Certified Chaos Agent · Rare</div>
+        <div class="card-text-box">
+          <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+          <div class="card-stat-line">
+            <span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span>
+          </div>
+        </div>
+        <div class="card-footer-group">
+          <div class="card-overbar"></div>
+          <div class="card-footer">
+            <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+            <div class="card-set-stamp">SC·S1</div>
+            <div class="card-number">#007</div>
+          </div>
+          <div class="card-meta">2341/7658 · PULL 11.3%</div>
+        </div>
+      </div>
+    </div>
+    <div class="font-label">Bebas Neue</div>
+    <div class="font-sub">Wide condensed display</div>
+  </div>
+
+  <!-- ── 2. CHAKRA PETCH (≈ Eurostile Extended) ── -->
+  <div class="card-slot">
+    <div class="card-wrap f-chakra">
+      <div class="card r-legendary">
+        <div class="card-grain"></div>
+        <div class="card-scratches"></div>
+        <div class="holo-shimmer"></div>
+        <div class="card-laminate"></div>
+        <div class="card-specular"></div>
+        <div class="card-foil"></div>
+        <div class="card-edge"></div>
+        <div class="card-corners"></div>
+        <div class="card-stamp"></div>
+
+        <div class="card-header">
+          <div class="card-name">Alex Chen</div>
+          <div class="card-hp">320HP</div>
+        </div>
+        <div class="card-img-wrap">👤</div>
+        <div class="card-type-line">Certified Chaos Agent · Legendary</div>
+        <div class="card-text-box">
+          <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+          <div class="card-stat-line">
+            <span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span>
+          </div>
+        </div>
+        <div class="card-footer-group">
+          <div class="card-overbar"></div>
+          <div class="card-footer">
+            <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+            <div class="card-set-stamp">SC·S1</div>
+            <div class="card-number">#007</div>
+          </div>
+          <div class="card-meta">2341/7658 · PULL 3.9%</div>
+        </div>
+      </div>
+    </div>
+    <div class="font-label">Chakra Petch</div>
+    <div class="font-sub">≈ Eurostile Extended</div>
+  </div>
+
+  <!-- ── 3. BARLOW CONDENSED (≈ Microgramma) ── -->
+  <div class="card-slot">
+    <div class="card-wrap f-barlow">
+      <div class="card r-uncommon">
+        <div class="card-grain"></div>
+        <div class="card-scratches"></div>
+        <div class="card-laminate"></div>
+        <div class="card-specular"></div>
+        <div class="card-foil"></div>
+        <div class="card-edge"></div>
+        <div class="card-corners"></div>
+        <div class="card-stamp"></div>
+
+        <div class="card-header">
+          <div class="card-name">Alex Chen</div>
+          <div class="card-hp">320HP</div>
+        </div>
+        <div class="card-img-wrap">👤</div>
+        <div class="card-type-line">Certified Chaos Agent · Uncommon</div>
+        <div class="card-text-box">
+          <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+          <div class="card-stat-line">
+            <span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span>
+          </div>
+        </div>
+        <div class="card-footer-group">
+          <div class="card-overbar"></div>
+          <div class="card-footer">
+            <div class="rarity-pip"><div class="pip"></div><div class="pip"></div></div>
+            <div class="card-set-stamp">SC·S1</div>
+            <div class="card-number">#007</div>
+          </div>
+          <div class="card-meta">2341/7658 · PULL 21.8%</div>
+        </div>
+      </div>
+    </div>
+    <div class="font-label">Barlow Condensed</div>
+    <div class="font-sub">≈ Microgramma</div>
+  </div>
+
+  <!-- ── 4. SHARE TECH MONO (≈ OCR-A) ── -->
+  <div class="card-slot">
+    <div class="card-wrap f-sharetech">
+      <div class="card r-secret">
+        <div class="card-grain"></div>
+        <div class="card-scratches"></div>
+        <div class="holo-shimmer"></div>
+        <div class="card-laminate"></div>
+        <div class="card-specular"></div>
+        <div class="card-foil"></div>
+        <div class="card-edge"></div>
+        <div class="card-corners"></div>
+        <div class="card-stamp"></div>
+
+        <div class="card-header">
+          <div class="card-name">Alex Chen</div>
+          <div class="card-hp">320HP</div>
+        </div>
+        <div class="card-img-wrap">👤</div>
+        <div class="card-type-line">Certified Chaos Agent · Secret</div>
+        <div class="card-text-box">
+          <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+          <div class="card-stat-line">
+            <span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span>
+          </div>
+        </div>
+        <div class="card-footer-group">
+          <div class="card-overbar"></div>
+          <div class="card-footer">
+            <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+            <div class="card-set-stamp">SC·S1</div>
+            <div class="card-number">#007</div>
+          </div>
+          <div class="card-meta">2341/7658 · PULL 0.6%</div>
+        </div>
+      </div>
+    </div>
+    <div class="font-label">Share Tech Mono</div>
+    <div class="font-sub">≈ OCR-A</div>
+  </div>
+
+  <!-- ── 5. IBM PLEX MONO ── -->
+  <div class="card-slot">
+    <div class="card-wrap f-plex">
+      <div class="card r-common">
+        <div class="card-grain"></div>
+        <div class="card-scratches"></div>
+        <div class="card-laminate"></div>
+        <div class="card-specular"></div>
+        <div class="card-foil"></div>
+        <div class="card-edge"></div>
+        <div class="card-corners"></div>
+        <div class="card-stamp"></div>
+
+        <div class="card-header">
+          <div class="card-name">Alex Chen</div>
+          <div class="card-hp">320HP</div>
+        </div>
+        <div class="card-img-wrap">👤</div>
+        <div class="card-type-line">Certified Chaos Agent · Common</div>
+        <div class="card-text-box">
+          <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+          <div class="card-stat-line">
+            <span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span>
+          </div>
+        </div>
+        <div class="card-footer-group">
+          <div class="card-overbar"></div>
+          <div class="card-footer">
+            <div class="rarity-pip"><div class="pip"></div></div>
+            <div class="card-set-stamp">SC·S1</div>
+            <div class="card-number">#007</div>
+          </div>
+          <div class="card-meta">2341/7658 · PULL 62.4%</div>
+        </div>
+      </div>
+    </div>
+    <div class="font-label">IBM Plex Mono</div>
+    <div class="font-sub">Structured mono</div>
+  </div>
+
+  <!-- ── 6. ORBITRON ── -->
+  <div class="card-slot">
+    <div class="card-wrap f-orbitron">
+      <div class="card r-rare">
+        <div class="card-grain"></div>
+        <div class="card-scratches"></div>
+        <div class="holo-shimmer"></div>
+        <div class="card-laminate"></div>
+        <div class="card-specular"></div>
+        <div class="card-foil"></div>
+        <div class="card-edge"></div>
+        <div class="card-corners"></div>
+        <div class="card-stamp"></div>
+
+        <div class="card-header">
+          <div class="card-name">Alex Chen</div>
+          <div class="card-hp">320HP</div>
+        </div>
+        <div class="card-img-wrap">👤</div>
+        <div class="card-type-line">Certified Chaos Agent · Rare</div>
+        <div class="card-text-box">
+          <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+          <div class="card-stat-line">
+            <span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span>
+          </div>
+        </div>
+        <div class="card-footer-group">
+          <div class="card-overbar"></div>
+          <div class="card-footer">
+            <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+            <div class="card-set-stamp">SC·S1</div>
+            <div class="card-number">#007</div>
+          </div>
+          <div class="card-meta">2341/7658 · PULL 11.3%</div>
+        </div>
+      </div>
+    </div>
+    <div class="font-label">Orbitron</div>
+    <div class="font-sub">Techno display</div>
+  </div>
+
+</div><!-- /grid -->
+
+<script>
+// ─── Per-card mouse tracking ───────────────────────────────────────────────
+const HOLO_RARITIES = new Set(['r-rare','r-legendary','r-secret']);
+
+document.querySelectorAll('.card-wrap').forEach(wrap => {
+  const card     = wrap.querySelector('.card');
+  const specular = card.querySelector('.card-specular');
+  const foil     = card.querySelector('.card-foil');
+
+  const isHolo = [...card.classList].some(c => HOLO_RARITIES.has(c));
+  const isLegendary = card.classList.contains('r-legendary');
+  const isSecret    = card.classList.contains('r-secret');
+
+  let raf = null;
+
+  const applyEffect = (clientX, clientY) => {
+    const rect = wrap.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (clientX - rect.left)  / rect.width));
+    const y = Math.min(1, Math.max(0, (clientY - rect.top)   / rect.height));
+
+    const rx = (y - 0.5) * -22;   // tilt X (pitch)
+    const ry = (x - 0.5) *  26;   // tilt Y (yaw)
+
+    // ── 3D tilt ──
+    card.style.transform = `perspective(650px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.04)`;
+    card.style.transition = 'transform 0.08s linear, box-shadow 0.08s linear';
+
+    // ── Dynamic card-edge shadow that shifts with tilt ──
+    // Near edge brightens, far edge darkens — illusion of thickness catching light
+    const ex = -ry * 0.45; // horizontal shift
+    const ey = rx  * 0.35; // vertical shift
+    card.style.boxShadow = `
+      ${ex - 1}px 0 0 rgba(230,215,178,1),
+      ${ex - 2}px 0 0 rgba(210,195,158,0.9),
+      ${ex - 3}px 0 0 rgba(185,170,138,0.8),
+      ${ex - 4}px 0 0 rgba(155,140,115,0.6),
+      0 ${ey + 1}px 0 rgba(210,195,158,0.9),
+      0 ${ey + 2}px 0 rgba(185,170,138,0.8),
+      0 ${ey + 3}px 0 rgba(155,140,115,0.6),
+      ${8 + ex}px ${14 + ey}px 32px rgba(0,0,0,0.65),
+      ${12 + ex}px ${20 + ey}px 0 rgba(0,0,0,0.3)
+    `;
+
+    // ── Specular: hot white highlight that tracks cursor ──
+    // Two layers: tight hot spot + wider soft bloom
+    specular.style.background = `
+      radial-gradient(ellipse 55% 40% at ${x*100}% ${y*100}%,
+        rgba(255,255,255,0.55) 0%,
+        rgba(255,255,255,0.18) 35%,
+        transparent 65%),
+      radial-gradient(ellipse 80% 70% at ${x*100}% ${y*100}%,
+        rgba(255,255,255,0.12) 0%,
+        transparent 60%)
+    `;
+    specular.style.opacity = '1';
+
+    // ── Foil/rainbow for holo cards ──
+    if (isHolo && foil) {
+      const angle = 110 + (x - 0.5) * 100;
+
+      let rainbow;
+      if (isLegendary) {
+        rainbow = `linear-gradient(${angle}deg,
+          transparent 18%,
+          rgba(255,215,0,0.42) 24%, rgba(255,165,0,0.42) 33%,
+          rgba(255,240,120,0.42) 42%, rgba(255,215,0,0.42) 51%,
+          transparent 58%)`;
+      } else if (isSecret) {
+        rainbow = `linear-gradient(${angle}deg,
+          transparent 5%,
+          rgba(200,100,255,0.35) 12%, rgba(100,0,255,0.35) 21%,
+          rgba(0,100,255,0.35) 30%, rgba(0,255,200,0.35) 39%,
+          rgba(200,100,255,0.35) 48%, transparent 55%)`;
+      } else {
+        rainbow = `linear-gradient(${angle}deg,
+          transparent 5%,
+          rgba(255,0,128,0.28) 12%, rgba(255,165,0,0.28) 20%,
+          rgba(255,255,0,0.28) 28%, rgba(0,255,128,0.28) 37%,
+          rgba(0,200,255,0.28) 46%, rgba(100,0,255,0.28) 54%,
+          rgba(255,0,255,0.28) 61%, transparent 68%)`;
+      }
+
+      // Combine: specular shine + rainbow diffraction
+      const shine = `radial-gradient(ellipse at ${x*100}% ${y*100}%,
+        rgba(255,255,255,0.22) 0%, transparent 52%)`;
+
+      foil.style.background = `${shine}, ${rainbow}`;
+      foil.style.opacity = '1';
+    }
+  };
+
+  const clearEffect = () => {
+    card.style.transform  = '';
+    card.style.transition = 'transform 0.55s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.55s ease';
+    card.style.boxShadow  = '';
+    specular.style.opacity = '0';
+    if (foil) foil.style.opacity = '0';
+  };
+
+  wrap.addEventListener('mousemove', (e) => {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => applyEffect(e.clientX, e.clientY));
+  });
+
+  wrap.addEventListener('mouseleave', clearEffect);
+
+  // Touch support
+  wrap.addEventListener('touchmove', (e) => {
+    if (e.cancelable) e.preventDefault();
+    const t = e.touches[0];
+    applyEffect(t.clientX, t.clientY);
+  }, { passive: false });
+
+  wrap.addEventListener('touchend', clearEffect);
+});
+
+// ─── Idle float animation (apply after mount) ───────────────────────────
+document.querySelectorAll('.card-wrap').forEach((wrap, i) => {
+  const card = wrap.querySelector('.card');
+  const delay = i * 0.4;
+  // Gentle float — adds life without distracting from font comparison
+  card.style.animation = `cardFloat 3.${i % 3}s ${delay}s ease-in-out infinite`;
+});
+
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes cardFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-6px); }
+  }
+  .card-wrap:hover .card {
+    animation-play-state: paused;
+  }
+`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function UserMenu({ user, profile, onSignIn, onSignOut }) {
+export default function UserMenu({ user, profile, displayName: guestDisplay, onSignIn, onSignOut }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -9,6 +9,30 @@ export default function UserMenu({ user, profile, onSignIn, onSignOut }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Guest (no account) but has a handle
+  if (!user && guestDisplay) {
+    return (
+      <div className="user-menu" ref={ref}>
+        <button
+          className="user-avatar user-avatar-guest"
+          onClick={() => setOpen(o => !o)}
+          type="button"
+          aria-label="Account menu"
+        >
+          {guestDisplay[0].toUpperCase()}
+        </button>
+        {open && (
+          <div className="user-dropdown">
+            <div className="user-dropdown-name">@{guestDisplay} <span style={{fontSize:10,color:'#aaa'}}>(guest)</span></div>
+            <button className="user-dropdown-item" onClick={() => { setOpen(false); onSignIn(); }} type="button">
+              Create Account
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (!user) {
     return (

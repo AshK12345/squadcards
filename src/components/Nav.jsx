@@ -1,7 +1,7 @@
 import ScLogo from './ScLogo';
 import UserMenu from './UserMenu';
 
-export default function Nav({ activeView, onViewChange, user, profile, onSignIn, onSignOut }) {
+export default function Nav({ activeView, onViewChange, user, profile, displayName, onSignIn, onSignOut }) {
   const tabs = [
     { id: 'create',     label: '✏️ Create' },
     { id: 'collection', label: '📦 Cards'  },
@@ -26,7 +26,7 @@ export default function Nav({ activeView, onViewChange, user, profile, onSignIn,
           </button>
         ))}
       </div>
-      <UserMenu user={user} profile={profile} onSignIn={onSignIn} onSignOut={onSignOut} />
+      <UserMenu user={user} profile={profile} displayName={displayName} onSignIn={onSignIn} onSignOut={onSignOut} />
     </nav>
   );
 }

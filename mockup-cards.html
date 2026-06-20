@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SquadCards — Card Aesthetic Exploration</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bebas+Neue&family=Barlow+Condensed:wght@700;900&family=Chakra+Petch:wght@700&family=IBM+Plex+Mono:wght@400;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Newsreader:ital,wght@0,600;1,400&family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Fredoka+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  /* Atmospheric desk surface — not a webpage */
+  background-color: #1c1814;
+  background-image:
+    /* subtle diagonal fabric weave */
+    repeating-linear-gradient(30deg,  rgba(255,255,255,0.014) 0, rgba(255,255,255,0.014) 1px, transparent 1px, transparent 18px),
+    repeating-linear-gradient(-30deg, rgba(255,255,255,0.010) 0, rgba(255,255,255,0.010) 1px, transparent 1px, transparent 18px),
+    /* warm center overhead light */
+    radial-gradient(ellipse 120% 80% at 50% 20%, rgba(255,210,140,0.06) 0%, transparent 60%);
+  color: #d4cbbe;
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+  padding: 52px 32px 100px;
+}
+
+/* ── Page header ── */
+.page-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+.page-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 56px;
+  letter-spacing: 4px;
+  color: #f0e8d8;
+  margin-bottom: 6px;
+  /* Ink press: slight offset double-print */
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5), -0.3px -0.3px 0 rgba(255,210,140,0.2);
+}
+.page-sub {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.22);
+}
+
+/* ── Section headers ── */
+.section {
+  max-width: 1440px;
+  margin: 0 auto 88px;
+}
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.section-number {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 96px;
+  line-height: 0.8;
+  color: rgba(255,255,255,0.06);
+  letter-spacing: -2px;
+  flex-shrink: 0;
+}
+.section-info {}
+.section-label {
+  font-family: 'Anton', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 4px;
+}
+.section-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,0.25);
+  line-height: 1.6;
+  max-width: 520px;
+  font-style: italic;
+}
+
+.card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 44px 36px;
+  justify-content: flex-start;
+}
+
+/* ── Card slot ── */
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.slot-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+}
+.slot-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 7.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.15);
+  text-align: center;
+  margin-top: -9px;
+}
+
+/* ══════════════════════════════════════
+   BASE CARD
+══════════════════════════════════════ */
+.card-wrap { width: 230px; perspective: 700px; position: relative; }
+
+.card {
+  width: 230px;
+  height: 356px;
+  border-radius: 14px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  cursor: pointer;
+  will-change: transform;
+}
+
+/* ── Rarity backgrounds ── */
+.card.r-common    { background: radial-gradient(ellipse at 30% 14%, #fffdf4, #f5e9ca 52%, #e4d4a8); }
+.card.r-uncommon  { background: radial-gradient(ellipse at 30% 14%, #f0fff2, #ceecce 52%, #aed8ae); }
+.card.r-rare      { background: radial-gradient(ellipse at 30% 14%, #eef4ff, #c6d8ff 52%, #a4b8f4); }
+.card.r-legendary {
+  background: linear-gradient(145deg, #fffdf0, #ffe898, #fff6cc, #ffdc7e, #fffdf0);
+  background-size: 200% 200%;
+  animation: lbg 3.5s ease infinite;
+}
+.card.r-secret {
+  background: linear-gradient(135deg, #fff0ff, #e4dcff, #dcf4ff, #fff0ff);
+  background-size: 300% 300%;
+  animation: sbg 5s linear infinite;
+}
+@keyframes lbg { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+@keyframes sbg  { 0%{background-position:0% 0%} 100%{background-position:100% 100%} }
+
+/* ── SPECTACLE card thickness (colored edges, dramatic shadows) ── */
+.card.mode-spectacle {
+  box-shadow:
+    -1px 0 0 rgba(220,205,170,1),
+    -2px 0 0 rgba(195,180,148,0.9),
+    -3px 0 0 rgba(168,153,124,0.8),
+    -4px 0 0 rgba(140,128,104,0.6),
+    0 1px 0 rgba(195,180,148,0.9),
+    0 2px 0 rgba(168,153,124,0.8),
+    0 3px 0 rgba(140,128,104,0.6),
+    6px 14px 32px rgba(0,0,0,0.7),
+    10px 20px 0 rgba(0,0,0,0.35);
+}
+
+/* ── MATERIAL card box-shadow (cleaner, no colored stacking) ── */
+.card.mode-material {
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.25),
+    0 2px 0 rgba(0,0,0,0.2),
+    0 3px 0 rgba(0,0,0,0.15),
+    0 4px 0 rgba(0,0,0,0.10),
+    0 6px 0 rgba(0,0,0,0.06),
+    4px 10px 24px rgba(0,0,0,0.55),
+    6px 14px 44px rgba(0,0,0,0.25);
+}
+
+/* ══════════════════════════════════════
+   TEXTURE LAYER SYSTEM
+══════════════════════════════════════ */
+
+/* 1. Fine paper grain (all cards) */
+.layer-grain {
+  position: absolute; inset: 0; z-index: 8; pointer-events: none; border-radius: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: 0.09;
+  mix-blend-mode: multiply;
+}
+
+/* 2. Halftone dot pattern (material cards — feels CMYK printed) */
+.layer-halftone {
+  position: absolute; inset: 0; z-index: 7; pointer-events: none; border-radius: 14px;
+  background-image: radial-gradient(circle, rgba(60,40,20,0.10) 0.7px, transparent 0.7px);
+  background-size: 3.5px 3.5px;
+  opacity: 1;
+  mix-blend-mode: multiply;
+}
+
+/* 3. Ink edge absorption (material — slight darkening toward all edges) */
+.layer-ink-edge {
+  position: absolute; inset: 0; z-index: 9; pointer-events: none; border-radius: 14px;
+  background: radial-gradient(ellipse 90% 88% at 50% 50%, transparent 58%, rgba(0,0,0,0.16) 100%);
+}
+
+/* 4. Directional scratches */
+.layer-scratches {
+  position: absolute; inset: 0; z-index: 10; pointer-events: none; border-radius: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.007 0.88' numOctaves='1' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)' opacity='0.35'/%3E%3C/svg%3E");
+  opacity: 0.10;
+  mix-blend-mode: overlay;
+}
+
+/* 5. Static laminate catch-light (spectacle mode) */
+.layer-laminate-hi {
+  position: absolute; inset: 0; z-index: 11; pointer-events: none; border-radius: 14px;
+  background:
+    linear-gradient(142deg,
+      rgba(255,255,255,0.44) 0%,
+      rgba(255,255,255,0.18) 18%,
+      rgba(255,255,255,0.05) 36%,
+      transparent 52%,
+      rgba(0,0,0,0.02) 100%);
+}
+
+/* 5b. Static desk-lamp catch-light (material mode — wider, warmer, softer) */
+.layer-laminate-soft {
+  position: absolute; inset: 0; z-index: 11; pointer-events: none; border-radius: 14px;
+  background:
+    linear-gradient(148deg,
+      rgba(255,240,200,0.22) 0%,
+      rgba(255,240,200,0.08) 28%,
+      transparent 52%);
+}
+
+/* 6. Dynamic specular (JS-driven) */
+.layer-specular {
+  position: absolute; inset: 0; z-index: 12; pointer-events: none; border-radius: 14px;
+  opacity: 0;
+  mix-blend-mode: soft-light;
+  transition: opacity 0.12s;
+}
+
+/* 7. Dynamic foil/rainbow (JS-driven, spectacle holo cards only) */
+.layer-foil {
+  position: absolute; inset: 0; z-index: 13; pointer-events: none; border-radius: 14px;
+  opacity: 0;
+  mix-blend-mode: color-dodge;
+  transition: opacity 0.12s;
+}
+
+/* 8. Inner bevel */
+.layer-bevel {
+  position: absolute; inset: 0; z-index: 14; pointer-events: none; border-radius: 14px;
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255,255,255,0.75),
+    inset -1px -1px 0 rgba(0,0,0,0.18);
+}
+
+/* 9. Corner wear */
+.layer-corners {
+  position: absolute; inset: 0; z-index: 15; pointer-events: none; border-radius: 14px;
+  background:
+    radial-gradient(ellipse 30px 24px at 0% 0%,   rgba(255,255,255,0.32) 0%, transparent 100%),
+    radial-gradient(ellipse 20px 18px at 100% 0%,  rgba(255,255,255,0.18) 0%, transparent 100%),
+    radial-gradient(ellipse 16px 20px at 0% 100%,  rgba(255,255,255,0.14) 0%, transparent 100%),
+    radial-gradient(ellipse 24px 20px at 100% 100%,rgba(255,255,255,0.22) 0%, transparent 100%);
+}
+
+/* 10. Always-on holo shimmer (spectacle mode, rare+) */
+.layer-holo-shimmer {
+  position: absolute; inset: 0; z-index: 8; pointer-events: none; border-radius: 14px;
+  background: linear-gradient(115deg,
+    transparent 20%, rgba(255,0,128,0.08) 26%, rgba(0,200,255,0.08) 34%,
+    rgba(255,255,0,0.08) 42%, rgba(255,0,255,0.08) 50%, transparent 56%);
+  background-size: 250% 250%;
+  animation: holoShimmer 4s ease-in-out infinite;
+  mix-blend-mode: color-dodge;
+}
+.r-legendary .layer-holo-shimmer {
+  background: linear-gradient(115deg,
+    transparent 20%, rgba(255,215,0,0.14) 28%, rgba(255,165,0,0.14) 38%,
+    rgba(255,240,120,0.14) 48%, rgba(255,215,0,0.14) 58%, transparent 64%);
+  background-size: 250% 250%;
+}
+@keyframes holoShimmer { 0%,100%{background-position:0% 0%} 50%{background-position:100% 100%} }
+
+/* ── Rarity corner stamp ── */
+.layer-stamp {
+  position: absolute; top: 0; right: 0; width: 0; height: 0;
+  border-style: solid; z-index: 16; pointer-events: none;
+}
+.r-common   .layer-stamp { border-width: 0 28px 28px 0; border-color: transparent #ca9a00 transparent transparent; }
+.r-uncommon .layer-stamp { border-width: 0 28px 28px 0; border-color: transparent #2a8a2a transparent transparent; }
+.r-rare     .layer-stamp { border-width: 0 30px 30px 0; border-color: transparent #2563eb transparent transparent; }
+.r-legendary.layer-stamp { border-width: 0 38px 38px 0; border-color: transparent #f59e0b transparent transparent; }
+.r-secret   .layer-stamp { border-width: 0 38px 38px 0; border-color: transparent #c084fc transparent transparent; }
+/* Stamp on card not the layer */
+.card .layer-stamp { position: absolute; top: 0; right: 0; }
+.r-common    .card .layer-stamp { border-width: 0 28px 28px 0; border-color: transparent #ca9a00 transparent transparent; }
+.r-uncommon  .card .layer-stamp { border-width: 0 28px 28px 0; border-color: transparent #2a8a2a transparent transparent; }
+.r-rare      .card .layer-stamp { border-width: 0 30px 30px 0; border-color: transparent #2563eb transparent transparent; }
+.r-legendary .card .layer-stamp { border-width: 0 38px 38px 0; border-color: transparent #f59e0b transparent transparent; }
+.r-secret    .card .layer-stamp { border-width: 0 38px 38px 0; border-color: transparent #c084fc transparent transparent; }
+
+/* ══════════════════════════════════════
+   CARD CONTENT
+══════════════════════════════════════ */
+.card-header {
+  padding: 9px 10px 6px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid rgba(26,26,26,0.45);
+  position: relative; z-index: 2;
+}
+.r-rare .card-header      { border-bottom-color: rgba(26,58,138,0.5); }
+.r-legendary .card-header { border-bottom-color: rgba(138,96,0,0.5); }
+.r-secret .card-header    { border-bottom-color: rgba(106,0,106,0.5); }
+
+.card-name {
+  font-size: 19px;
+  color: #1a1a1a;
+  flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  line-height: 1;
+}
+
+.card-hp {
+  font-family: 'Fredoka One', sans-serif;
+  font-size: 11px; padding: 2px 7px; border-radius: 20px;
+  border: 2px solid rgba(26,26,26,0.35); margin-left: 6px; flex-shrink: 0;
+}
+.r-common .card-hp    { background:#ffd700; color:#1a1a1a; }
+.r-uncommon .card-hp  { background:#4caf50; color:#fff; }
+.r-rare .card-hp      { background:#2563eb; color:#fff; border-color:rgba(26,58,138,0.4); }
+.r-legendary .card-hp { background:#f59e0b; color:#1a1a1a; border-color:rgba(138,96,0,0.4); }
+.r-secret .card-hp    { background:linear-gradient(135deg,#c084fc,#60a5fa); color:#fff; border-color:rgba(106,0,106,0.4); }
+
+.card-img-wrap {
+  margin: 7px 8px 0; height: 128px; border-radius: 8px;
+  overflow: hidden; border: 2px solid rgba(26,26,26,0.28);
+  background: linear-gradient(135deg, #d8ceb8, #c4b89e);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 2; font-size: 42px;
+}
+.card-img-wrap::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(148deg, rgba(255,255,255,0.28) 0%, transparent 46%);
+  pointer-events: none; z-index: 1;
+}
+.card-img-wrap::after {
+  content: ''; position: absolute; left:0; right:0; bottom:0; height:38%;
+  background: linear-gradient(to top, rgba(0,0,0,0.16), transparent);
+  pointer-events: none; z-index: 1;
+}
+
+.card-type-line {
+  padding: 3px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 6.5px; letter-spacing: 0.5px;
+  text-transform: uppercase; color: #777;
+  position: relative; z-index: 2;
+}
+
+.card-text-box {
+  margin: 0 8px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(245,238,220,0.84));
+  border: 2px solid rgba(26,26,26,0.26); border-radius: 8px;
+  padding: 6px 8px; height: 72px; overflow: hidden;
+  position: relative; z-index: 2;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.07);
+}
+.card-flavor {
+  font-size: 9px; line-height: 1.55; color: #333;
+  font-style: italic; font-weight: 600;
+  display: -webkit-box; -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.card-stat-line {
+  font-family: 'Fredoka One', sans-serif; font-size: 8.5px; color: #555;
+  margin-top: 4px; display: flex; gap: 5px;
+}
+.card-stat-line .neg { color: #2563eb; }
+
+/* ── Footer ── */
+.card-footer-group { margin-top: auto; position: relative; z-index: 2; }
+
+/* Spectacle overbar: animated metallic sweep */
+.card-overbar-spectacle {
+  height: 9px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(180deg, #b8b8b8 0%, #ececec 35%, #d8d8d8 62%, #aaaaaa 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 2px rgba(0,0,0,0.12);
+}
+.r-rare .card-overbar-spectacle {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(90deg, #1a3aaa 0%, #6090ff 18%, #1a3aaa 36%, #90b0ff 52%, #1a3aaa 68%, #6090ff 84%, #1a3aaa 100%);
+  background-size: 100% 100%, 200% 100%;
+  animation: metalShift 3s linear infinite;
+}
+.r-legendary .card-overbar-spectacle {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.65) 0%, transparent 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(90deg, #9a7200 0%, #ffe050 16%, #9a7200 32%, #ffd020 48%, #c8a000 64%, #ffe050 80%, #9a7200 100%);
+  background-size: 100% 100%, 200% 100%;
+  animation: metalShift 2s linear infinite;
+}
+.r-secret .card-overbar-spectacle {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 50%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(90deg, #6a006a 0%, #d080ff 16%, #6a006a 32%, #b060ee 48%, #8a20aa 64%, #d080ff 80%, #6a006a 100%);
+  background-size: 100% 100%, 200% 100%;
+  animation: metalShift 2.5s linear infinite;
+}
+@keyframes metalShift { 0%{background-position:100% 100%,0% 0%} 100%{background-position:100% 100%,200% 0%} }
+
+/* Material overbar: static foil stamp (not animated) */
+.card-overbar-material {
+  height: 9px;
+  /* Static metallic foil — a single printed strip, like embossed foil on a box */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 100%),
+    linear-gradient(180deg, #c8c0b0 0%, #e8e4d8 38%, #d4cfc2 60%, #b4aea0 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.r-rare .card-overbar-material {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 50%, rgba(0,0,0,0.05) 100%),
+    linear-gradient(180deg, #8090b8 0%, #b0c0e8 38%, #909dc8 60%, #6878a8 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+}
+.r-legendary .card-overbar-material {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 50%, rgba(0,0,0,0.05) 100%),
+    linear-gradient(180deg, #b09000 0%, #d8b830 38%, #b09000 60%, #887000 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+}
+
+.card-footer {
+  padding: 4px 10px 5px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.rarity-pip { display: flex; gap: 3px; }
+.pip { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.3); }
+.r-common .pip    { background: #ffd700; }
+.r-uncommon .pip  { background: #4caf50; }
+.r-rare .pip      { background: #2563eb; }
+.r-legendary .pip { background: #f59e0b; }
+.r-secret .pip    { background: linear-gradient(135deg,#c084fc,#60a5fa); }
+
+.card-set-stamp {
+  font-family: 'IBM Plex Mono', monospace; font-size: 7px;
+  color: rgba(0,0,0,0.3); text-align: center; flex: 1;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.card-number { font-family: 'IBM Plex Mono', monospace; font-size: 7px; color: #aaa; }
+.card-meta {
+  font-family: 'IBM Plex Mono', monospace; font-size: 5.5px;
+  color: rgba(0,0,0,0.24); text-align: center; padding: 0 10px 6px;
+  position: relative; z-index: 2;
+}
+
+/* ══════════════════════════════════════
+   SECTION 1 FONT CLASSES (Spectacle)
+══════════════════════════════════════ */
+.f-bebas     .card-name { font-family: 'Bebas Neue', cursive;          font-size: 21px;  letter-spacing: 2.5px; }
+.f-chakra    .card-name { font-family: 'Chakra Petch', sans-serif;     font-size: 14px;  font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.f-barlow    .card-name { font-family: 'Barlow Condensed', sans-serif; font-size: 21px;  font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
+.f-sharetech .card-name { font-family: 'Share Tech Mono', monospace;   font-size: 12.5px; text-transform: uppercase; }
+.f-plex      .card-name { font-family: 'IBM Plex Mono', monospace;     font-size: 12px;  font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px; }
+.f-orbitron  .card-name { font-family: 'Orbitron', sans-serif;         font-size: 10.5px;font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ══════════════════════════════════════
+   SECTION 2 FONT CLASSES (Material)
+══════════════════════════════════════ */
+/* Anton — very tall + bold, sports card label, zero fuss */
+.f-anton .card-name {
+  font-family: 'Anton', sans-serif;
+  font-size: 20px; letter-spacing: 1.5px; text-transform: uppercase;
+  /* Slight ink press — double-print offset */
+  text-shadow: 0.5px 0.5px 0 rgba(0,0,0,0.25);
+}
+
+/* Archivo Black — confident packaging energy */
+.f-archivo .card-name {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase;
+}
+
+/* IBM Plex Sans Bold — structured, institutional, yearbook header */
+.f-plexsans .card-name {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* Newsreader — editorial, magazine, slightly old-world */
+.f-newsreader .card-name {
+  font-family: 'Newsreader', serif;
+  font-size: 16px; font-weight: 600; font-style: italic;
+  letter-spacing: 0; text-transform: none;
+}
+
+/* Bebas Neue but with material treatment (restrained version) */
+.f-bebas-clean .card-name {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 21px; letter-spacing: 2px;
+  text-shadow: none;
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1 class="page-title">SQUADCARDS</h1>
+  <p class="page-sub">Card Aesthetic Exploration — Hover each card</p>
+</div>
+
+
+<!-- ══ SECTION 1: SPECTACLE ══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">01</div>
+    <div class="section-info">
+      <div class="section-label">SPECTACLE MODE</div>
+      <div class="section-desc">Holo foil, animated metals, rainbow diffraction, tracked specular. High visual intensity. Six font variants on the name. Good for: rare reveal moments, legendary cards, pack opening drama.</div>
+    </div>
+  </div>
+
+  <div class="card-row" id="spectacle-row">
+
+    <!-- 1. Bebas Neue -->
+    <div class="slot">
+      <div class="card-wrap f-bebas">
+        <div class="card r-rare mode-spectacle" data-mode="spectacle">
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-holo-shimmer"></div>
+          <div class="layer-laminate-hi"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Rare</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-spectacle"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 11.3%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Bebas Neue</div>
+      <div class="slot-sub">Wide condensed display</div>
+    </div>
+
+    <!-- 2. Chakra Petch -->
+    <div class="slot">
+      <div class="card-wrap f-chakra">
+        <div class="card r-legendary mode-spectacle" data-mode="spectacle">
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-holo-shimmer"></div>
+          <div class="layer-laminate-hi"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Legendary</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-spectacle"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 3.9%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Chakra Petch</div>
+      <div class="slot-sub">≈ Eurostile Extended</div>
+    </div>
+
+    <!-- 3. Barlow Condensed -->
+    <div class="slot">
+      <div class="card-wrap f-barlow">
+        <div class="card r-uncommon mode-spectacle" data-mode="spectacle">
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-laminate-hi"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Uncommon</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-spectacle"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 21.8%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Barlow Condensed</div>
+      <div class="slot-sub">≈ Microgramma</div>
+    </div>
+
+    <!-- 4. Share Tech Mono -->
+    <div class="slot">
+      <div class="card-wrap f-sharetech">
+        <div class="card r-secret mode-spectacle" data-mode="spectacle">
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-holo-shimmer"></div>
+          <div class="layer-laminate-hi"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Secret</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-spectacle"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 0.6%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Share Tech Mono</div>
+      <div class="slot-sub">≈ OCR-A</div>
+    </div>
+
+    <!-- 5. IBM Plex Mono -->
+    <div class="slot">
+      <div class="card-wrap f-plex">
+        <div class="card r-common mode-spectacle" data-mode="spectacle">
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-laminate-hi"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Common</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-spectacle"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 62.4%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">IBM Plex Mono</div>
+      <div class="slot-sub">Structured mono</div>
+    </div>
+
+    <!-- 6. Orbitron -->
+    <div class="slot">
+      <div class="card-wrap f-orbitron">
+        <div class="card r-rare mode-spectacle" data-mode="spectacle">
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-holo-shimmer"></div>
+          <div class="layer-laminate-hi"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Rare</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-spectacle"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 11.3%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Orbitron</div>
+      <div class="slot-sub">Techno display</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══ SECTION 2: MATERIALITY ══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">02</div>
+    <div class="section-info">
+      <div class="section-label">MATERIALITY MODE</div>
+      <div class="section-desc">90% matte, 10% reflective. Halftone printing, ink edge absorption, soft desk-lamp catch light, wide plastic-near-window specular. Fonts from sports cards, packaging, yearbooks. No RGB.</div>
+    </div>
+  </div>
+
+  <div class="card-row" id="material-row">
+
+    <!-- 1. Anton — sports card, big bold label -->
+    <div class="slot">
+      <div class="card-wrap f-anton">
+        <div class="card r-rare mode-material" data-mode="material">
+          <div class="layer-halftone"></div>
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-ink-edge"></div>
+          <div class="layer-laminate-soft"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Rare</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-material"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 11.3%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Anton</div>
+      <div class="slot-sub">Sports card / sticker label</div>
+    </div>
+
+    <!-- 2. Archivo Black — packaging confidence -->
+    <div class="slot">
+      <div class="card-wrap f-archivo">
+        <div class="card r-legendary mode-material" data-mode="material">
+          <div class="layer-halftone"></div>
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-ink-edge"></div>
+          <div class="layer-laminate-soft"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Legendary</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-material"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 3.9%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Archivo Black</div>
+      <div class="slot-sub">Packaging / toy box</div>
+    </div>
+
+    <!-- 3. IBM Plex Sans — structured institutional -->
+    <div class="slot">
+      <div class="card-wrap f-plexsans">
+        <div class="card r-uncommon mode-material" data-mode="material">
+          <div class="layer-halftone"></div>
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-ink-edge"></div>
+          <div class="layer-laminate-soft"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Uncommon</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-material"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 21.8%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">IBM Plex Sans</div>
+      <div class="slot-sub">Yearbook / instruction manual</div>
+    </div>
+
+    <!-- 4. Newsreader italic — editorial, magazine -->
+    <div class="slot">
+      <div class="card-wrap f-newsreader">
+        <div class="card r-common mode-material" data-mode="material">
+          <div class="layer-halftone"></div>
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-ink-edge"></div>
+          <div class="layer-laminate-soft"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Common</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-material"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 62.4%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Newsreader Italic</div>
+      <div class="slot-sub">Sports magazine / editorial</div>
+    </div>
+
+    <!-- 5. Bebas Neue (clean, no glow) — what if we kept the font but changed everything else -->
+    <div class="slot">
+      <div class="card-wrap f-bebas-clean">
+        <div class="card r-secret mode-material" data-mode="material">
+          <div class="layer-halftone"></div>
+          <div class="layer-grain"></div>
+          <div class="layer-scratches"></div>
+          <div class="layer-ink-edge"></div>
+          <div class="layer-laminate-soft"></div>
+          <div class="layer-specular"></div>
+          <div class="layer-foil"></div>
+          <div class="layer-bevel"></div>
+          <div class="layer-corners"></div>
+          <div class="layer-stamp"></div>
+          <div class="card-header">
+            <div class="card-name">Alex Chen</div>
+            <div class="card-hp">320HP</div>
+          </div>
+          <div class="card-img-wrap">👤</div>
+          <div class="card-type-line">Certified Chaos Agent · Secret</div>
+          <div class="card-text-box">
+            <div class="card-flavor">Claims to be "basically a morning person." Evidence inconclusive.</div>
+            <div class="card-stat-line"><span>🧠87</span><span>💀42</span><span class="neg">☕-3</span><span>👔61</span></div>
+          </div>
+          <div class="card-footer-group">
+            <div class="card-overbar-material"></div>
+            <div class="card-footer">
+              <div class="rarity-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+              <div class="card-set-stamp">SC·S1</div>
+              <div class="card-number">#007</div>
+            </div>
+            <div class="card-meta">2341/7658 · PULL 0.6%</div>
+          </div>
+        </div>
+      </div>
+      <div class="slot-label">Bebas Neue (material)</div>
+      <div class="slot-sub">Same font, different treatment</div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// ── SPECTACLE mode hover: tracked hot-spot specular + rainbow foil ─────────
+const HOLO_RARITIES = new Set(['r-rare','r-legendary','r-secret']);
+
+function applySpectacle(card, x, y) {
+  const specular = card.querySelector('.layer-specular');
+  const foil     = card.querySelector('.layer-foil');
+  const isHolo   = [...card.classList].some(c => HOLO_RARITIES.has(c));
+  const isLeg    = card.classList.contains('r-legendary');
+  const isSec    = card.classList.contains('r-secret');
+
+  const rx = (y - 0.5) * -22;
+  const ry = (x - 0.5) *  26;
+
+  card.style.transform  = `perspective(660px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.04)`;
+  card.style.transition = 'transform 0.08s linear, box-shadow 0.08s linear';
+
+  const ex = -ry * 0.42; const ey = rx * 0.32;
+  card.style.boxShadow = `
+    ${ex-1}px 0 0 rgba(228,212,172,1), ${ex-2}px 0 0 rgba(204,188,152,0.9),
+    ${ex-3}px 0 0 rgba(172,158,128,0.8), ${ex-4}px 0 0 rgba(144,132,108,0.6),
+    0 ${ey+1}px 0 rgba(204,188,152,0.9), 0 ${ey+2}px 0 rgba(172,158,128,0.8),
+    0 ${ey+3}px 0 rgba(144,132,108,0.6),
+    ${8+ex}px ${14+ey}px 32px rgba(0,0,0,0.68),
+    ${12+ex}px ${20+ey}px 0 rgba(0,0,0,0.32)`;
+
+  specular.style.background = `
+    radial-gradient(ellipse 52% 38% at ${x*100}% ${y*100}%,
+      rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.18) 34%, transparent 62%),
+    radial-gradient(ellipse 78% 68% at ${x*100}% ${y*100}%,
+      rgba(255,255,255,0.10) 0%, transparent 58%)`;
+  specular.style.opacity = '1';
+
+  if (isHolo && foil) {
+    const angle = 108 + (x - 0.5) * 95;
+    let rainbow;
+    if (isLeg) {
+      rainbow = `linear-gradient(${angle}deg, transparent 18%,
+        rgba(255,215,0,0.42) 24%, rgba(255,165,0,0.42) 33%,
+        rgba(255,240,120,0.42) 42%, rgba(255,215,0,0.42) 51%, transparent 58%)`;
+    } else if (isSec) {
+      rainbow = `linear-gradient(${angle}deg, transparent 5%,
+        rgba(200,100,255,0.32) 12%, rgba(80,0,255,0.32) 22%,
+        rgba(0,120,255,0.32) 32%, rgba(0,255,180,0.32) 42%,
+        rgba(200,100,255,0.32) 52%, transparent 58%)`;
+    } else {
+      rainbow = `linear-gradient(${angle}deg, transparent 5%,
+        rgba(255,0,128,0.26) 12%, rgba(255,165,0,0.26) 20%,
+        rgba(255,255,0,0.26) 28%, rgba(0,255,128,0.26) 37%,
+        rgba(0,200,255,0.26) 46%, rgba(100,0,255,0.26) 54%,
+        rgba(255,0,255,0.26) 61%, transparent 68%)`;
+    }
+    foil.style.background = `radial-gradient(ellipse at ${x*100}% ${y*100}%,
+      rgba(255,255,255,0.18) 0%, transparent 50%), ${rainbow}`;
+    foil.style.opacity = '1';
+  }
+}
+
+// ── MATERIAL mode hover: soft wide plastic-near-window reflection ─────────
+function applyMaterial(card, x, y) {
+  const specular = card.querySelector('.layer-specular');
+  const foil     = card.querySelector('.layer-foil');
+
+  // Gentler tilt — like picking up a card, not a holographic reveal
+  const rx = (y - 0.5) * -14;
+  const ry = (x - 0.5) *  16;
+
+  card.style.transform  = `perspective(700px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.025)`;
+  card.style.transition = 'transform 0.1s linear, box-shadow 0.1s linear';
+
+  // Drop shadow shifts directionally but stays simple (not thick colored edge)
+  const ex = -ry * 0.3; const ey = rx * 0.22;
+  card.style.boxShadow = `
+    0 1px 0 rgba(0,0,0,0.22), 0 2px 0 rgba(0,0,0,0.18),
+    0 3px 0 rgba(0,0,0,0.13), 0 4px 0 rgba(0,0,0,0.09),
+    ${4+ex}px ${10+ey}px 24px rgba(0,0,0,0.55),
+    ${6+ex}px ${14+ey}px 44px rgba(0,0,0,0.22)`;
+
+  // Wide soft directional sweep — like near a window, not a hot spot
+  // Reflection angle follows gross direction, not per-pixel cursor
+  const sweepAngle = 140 + ry * 1.5;
+  const brightness = 0.08 + Math.abs(y - 0.5) * 0.06;
+  specular.style.background = `
+    linear-gradient(${sweepAngle}deg,
+      transparent 20%,
+      rgba(255,248,232,${brightness * 1.8}) 38%,
+      rgba(255,248,232,${brightness}) 50%,
+      rgba(255,248,232,${brightness * 0.4}) 62%,
+      transparent 78%)`;
+  specular.style.opacity = '1';
+
+  // Foil for rare/legendary: just a subtle directional sheen, not rainbow
+  const isHolo = [...card.classList].some(c => HOLO_RARITIES.has(c));
+  if (isHolo && foil) {
+    foil.style.background = `linear-gradient(${sweepAngle + 10}deg,
+      transparent 30%, rgba(255,255,255,0.08) 45%, transparent 60%)`;
+    foil.style.opacity = '1';
+  }
+}
+
+// ── Wire up all card wraps ────────────────────────────────────────────────
+document.querySelectorAll('.card-wrap').forEach(wrap => {
+  const card = wrap.querySelector('.card');
+  const mode = card.dataset.mode;
+  let raf = null;
+
+  const apply = (cx, cy) => {
+    const rect = wrap.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (cx - rect.left)  / rect.width));
+    const y = Math.min(1, Math.max(0, (cy - rect.top)   / rect.height));
+    if (mode === 'spectacle') applySpectacle(card, x, y);
+    else                      applyMaterial(card, x, y);
+  };
+
+  const clear = () => {
+    card.style.transform  = '';
+    card.style.transition = 'transform 0.55s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.55s ease';
+    card.style.boxShadow  = '';
+    card.querySelectorAll('.layer-specular, .layer-foil').forEach(l => l.style.opacity = '0');
+    card.style.animation  = '';
+    setTimeout(() => { card.style.transition = ''; }, 600);
+  };
+
+  wrap.addEventListener('mousemove', e => {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => apply(e.clientX, e.clientY));
+  });
+  wrap.addEventListener('mouseleave', clear);
+  wrap.addEventListener('touchmove', e => {
+    if (e.cancelable) e.preventDefault();
+    apply(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
+  wrap.addEventListener('touchend', clear);
+});
+
+// ── Gentle idle float ─────────────────────────────────────────────────────
+const floatStyle = document.createElement('style');
+floatStyle.textContent = `
+  @keyframes cardFloat {
+    0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)}
+  }
+  .card-wrap:hover .card { animation-play-state:paused !important; }
+`;
+document.head.appendChild(floatStyle);
+
+document.querySelectorAll('.card-wrap').forEach((wrap, i) => {
+  const card = wrap.querySelector('.card');
+  card.style.animation = `cardFloat ${2.8 + (i % 4) * 0.35}s ${i * 0.3}s ease-in-out infinite`;
+});
+</script>
+</body>
+</html>

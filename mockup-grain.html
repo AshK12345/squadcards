@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grain Generator — Simplex fBm</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a1a;
+    color: #eee;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Controls ── */
+  #controls {
+    width: 290px;
+    flex-shrink: 0;
+    background: #111;
+    border-right: 1px solid #2a2a2a;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+  }
+
+  h1 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #555; margin-bottom: 10px; }
+  h2 { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #444;
+       margin: 12px 0 5px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+  }
+  .row label { color: #888; flex-shrink: 0; width: 136px; font-size: 12px; }
+  .row input[type=range] {
+    flex: 1;
+    height: 3px;
+    accent-color: #c8a044;
+    cursor: pointer;
+  }
+  .val {
+    width: 40px;
+    text-align: right;
+    color: #c8a044;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  select {
+    background: #1e1e1e;
+    color: #eee;
+    border: 1px solid #333;
+    padding: 3px 6px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    flex: 1;
+  }
+
+  .divider { height: 1px; background: #222; margin: 8px 0 4px; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  .btn {
+    flex: 1;
+    padding: 9px 6px;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid #333;
+  }
+  #btn-regen   { background: #222; color: #888; }
+  #btn-regen:hover { background: #333; color: #eee; }
+  #btn-download { background: #c8a044; color: #111; border-color: #c8a044; }
+  #btn-download:hover { background: #e0b84e; }
+
+  .note { color: #444; font-size: 10px; line-height: 1.6; margin-top: 6px; }
+  code { color: #666; }
+
+  /* ── Preview ── */
+  #preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 20px;
+    gap: 28px;
+    overflow-y: auto;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #444;
+    border-bottom: 1px solid #222;
+    padding-bottom: 6px;
+    width: 100%;
+    max-width: 860px;
+    text-align: left;
+  }
+
+  #canvas-wrap { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+  .canvas-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .canvas-tile span { font-size: 10px; color: #444; letter-spacing: 1px; text-transform: uppercase; }
+  canvas { border: 1px solid #2a2a2a; display: block; }
+
+  /* Card styles matching the real app */
+  .cards-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .card-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .card-wrap span { font-size: 10px; color: #444; letter-spacing: 1px; text-transform: uppercase; }
+
+  .card {
+    width: 196px;
+    height: 304px;
+    border-radius: 12px;
+    border: 2px solid #1a1a1a;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .card.common    { background: radial-gradient(ellipse at 32% 12%, #fffdf2, #f8ecd0 55%, #e8d8ae); }
+  .card.uncommon  { background: radial-gradient(ellipse at 32% 12%, #f4fff5, #d4f0d6 55%, #b4dcb6); }
+  .card.rare      { background: radial-gradient(ellipse at 32% 12%, #f2f6ff, #ccdaff 55%, #a8bef8); }
+  .card.legendary { background: linear-gradient(145deg, #fffcf0, #ffe99a, #fff8d0, #ffde80); }
+
+  .card-hdr {
+    padding: 6px 8px 4px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: 700;
+    color: #1a1a1a;
+    border-bottom: 1px solid rgba(0,0,0,0.18);
+    position: relative;
+    z-index: 5;
+  }
+  .card-img {
+    margin: 6px;
+    height: 88px;
+    background: linear-gradient(135deg, #c8b89a 0%, #a89070 100%);
+    border-radius: 5px;
+    position: relative;
+    z-index: 5;
+  }
+  .card-body {
+    flex: 1;
+    margin: 4px 6px;
+    background: rgba(255,255,255,0.55);
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 5;
+  }
+  .card-footer {
+    padding: 5px 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: rgba(0,0,0,0.4);
+    position: relative;
+    z-index: 5;
+  }
+
+  .grain-layer {
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    z-index: 10;
+    pointer-events: none;
+    background-repeat: repeat;
+  }
+
+  /* Blend mode comparison grid */
+  .blend-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; max-width: 860px; }
+  .blend-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .blend-cell .card { width: 118px; height: 184px; }
+  .blend-cell .card-img { height: 52px; }
+  .blend-cell span { font-size: 9px; color: #555; letter-spacing: 1px; text-transform: uppercase; }
+
+  #perf-note { font-size: 10px; color: #555; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- ══ CONTROLS ══════════════════════════════════ -->
+<div id="controls">
+  <h1>Simplex fBm Generator</h1>
+
+  <h2>Base Noise</h2>
+  <div class="row">
+    <label>Seed</label>
+    <input type="range" id="seed-sl" min="0" max="9999" step="1" value="1">
+    <span class="val" id="seed-val">1</span>
+  </div>
+  <div class="row">
+    <label>Period</label>
+    <input type="range" id="period" min="0.5" max="8" step="0.1" value="2">
+    <span class="val" id="period-val">2.0</span>
+  </div>
+
+  <h2>Harmonics (fBm Octaves)</h2>
+  <div class="row">
+    <label>Harmonics</label>
+    <input type="range" id="harmonics" min="1" max="12" step="1" value="10">
+    <span class="val" id="harmonics-val">10</span>
+  </div>
+  <div class="row">
+    <label>Harmonic Spread</label>
+    <input type="range" id="h-spread" min="1.5" max="4" step="0.05" value="2.7">
+    <span class="val" id="h-spread-val">2.70</span>
+  </div>
+  <div class="row">
+    <label>Harmonic Gain</label>
+    <input type="range" id="h-gain" min="0.1" max="0.9" step="0.01" value="0.53">
+    <span class="val" id="h-gain-val">0.53</span>
+  </div>
+
+  <h2>Transfer / Shape</h2>
+  <div class="row">
+    <label>Exponent</label>
+    <input type="range" id="exponent" min="0.3" max="5" step="0.01" value="1.71">
+    <span class="val" id="exponent-val">1.71</span>
+  </div>
+  <div class="row">
+    <label>Amplitude</label>
+    <input type="range" id="amplitude" min="0.5" max="4" step="0.05" value="2">
+    <span class="val" id="amplitude-val">2.00</span>
+  </div>
+  <div class="row">
+    <label>Offset</label>
+    <input type="range" id="offset" min="-1" max="1" step="0.001" value="0.404">
+    <span class="val" id="offset-val">0.404</span>
+  </div>
+
+  <h2>Card Application</h2>
+  <div class="row">
+    <label>OD Intensity</label>
+    <input type="range" id="od" min="0" max="1" step="0.01" value="0.22">
+    <span class="val" id="od-val">0.22</span>
+  </div>
+  <div class="row">
+    <label>Blend mode</label>
+    <select id="blend">
+      <option value="multiply" selected>multiply</option>
+      <option value="screen">screen</option>
+      <option value="overlay">overlay</option>
+      <option value="soft-light">soft-light</option>
+      <option value="hard-light">hard-light</option>
+      <option value="color-dodge">color-dodge</option>
+      <option value="luminosity">luminosity</option>
+    </select>
+  </div>
+  <div class="row">
+    <label>Tile size on card</label>
+    <input type="range" id="tile" min="60" max="400" step="10" value="200">
+    <span class="val" id="tile-val">200px</span>
+  </div>
+
+  <h2>Output</h2>
+  <div class="row">
+    <label>Texture resolution</label>
+    <select id="tex-size">
+      <option value="128">128 × 128</option>
+      <option value="256" selected>256 × 256</option>
+      <option value="512">512 × 512 (slow)</option>
+    </select>
+  </div>
+
+  <div class="divider"></div>
+  <p class="note">
+    Matches Houdini Simplex 3D node params.<br>
+    <code>Harmonic Spread</code> = lacunarity<br>
+    <code>Harmonic Gain</code> = persistence<br>
+    <code>OD Intensity</code> = layer opacity on card
+  </p>
+
+  <div class="btn-row">
+    <button class="btn" id="btn-regen">↺ New seed</button>
+    <button class="btn" id="btn-download">⬇ PNG</button>
+  </div>
+  <p id="perf-note" style="margin-top:6px;"></p>
+</div>
+
+<!-- ══ PREVIEW ════════════════════════════════════ -->
+<div id="preview">
+
+  <div class="section-label">Raw texture</div>
+  <div id="canvas-wrap">
+    <div class="canvas-tile">
+      <canvas id="grain-canvas"></canvas>
+      <span>Output</span>
+    </div>
+    <div class="canvas-tile">
+      <canvas id="debug-canvas"></canvas>
+      <span>Raw fBm (before transfer)</span>
+    </div>
+  </div>
+
+  <div class="section-label">Card previews — your blend &amp; OD</div>
+  <div class="cards-row" id="main-cards"></div>
+
+  <div class="section-label">All blend modes at current OD</div>
+  <div class="blend-grid" id="blend-grid"></div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SEEDED PRNG — mulberry32
+// ═══════════════════════════════════════════════════════════
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SIMPLEX 2D NOISE
+//  Standard implementation, output roughly [-1, 1]
+// ═══════════════════════════════════════════════════════════
+const GRAD2 = [
+  [1,1],[-1,1],[1,-1],[-1,-1],
+  [1,0],[-1,0],[1,0],[-1,0],
+  [0,1],[0,-1],[0,1],[0,-1]
+];
+
+function buildPerm(seed) {
+  const rand = mulberry32(seed);
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) {
+    const j = (rand() * (i + 1)) | 0;
+    const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+  }
+  const perm = new Uint8Array(512);
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  return perm;
+}
+
+function simplex2(perm, xin, yin) {
+  const F2 = 0.5 * (Math.sqrt(3) - 1);
+  const G2 = (3 - Math.sqrt(3)) / 6;
+
+  const s  = (xin + yin) * F2;
+  const i  = Math.floor(xin + s);
+  const j  = Math.floor(yin + s);
+  const t  = (i + j) * G2;
+  const x0 = xin - (i - t);
+  const y0 = yin - (j - t);
+
+  const i1 = x0 > y0 ? 1 : 0;
+  const j1 = x0 > y0 ? 0 : 1;
+
+  const x1 = x0 - i1 + G2;
+  const y1 = y0 - j1 + G2;
+  const x2 = x0 - 1 + 2 * G2;
+  const y2 = y0 - 1 + 2 * G2;
+
+  const ii  = i & 255;
+  const jj  = j & 255;
+  const gi0 = perm[ii      + perm[jj     ]] % 12;
+  const gi1 = perm[ii + i1 + perm[jj + j1]] % 12;
+  const gi2 = perm[ii + 1  + perm[jj + 1 ]] % 12;
+
+  const dot = (g, x, y) => g[0]*x + g[1]*y;
+
+  let t0 = 0.5 - x0*x0 - y0*y0;
+  const n0 = t0 < 0 ? 0 : (t0*t0)*(t0*t0) * dot(GRAD2[gi0], x0, y0);
+
+  let t1 = 0.5 - x1*x1 - y1*y1;
+  const n1 = t1 < 0 ? 0 : (t1*t1)*(t1*t1) * dot(GRAD2[gi1], x1, y1);
+
+  let t2 = 0.5 - x2*x2 - y2*y2;
+  const n2 = t2 < 0 ? 0 : (t2*t2)*(t2*t2) * dot(GRAD2[gi2], x2, y2);
+
+  return 70 * (n0 + n1 + n2); // scale to approx [-1, 1]
+}
+
+// ═══════════════════════════════════════════════════════════
+//  fBm — fractional Brownian motion
+//  Returns value in roughly [-1, 1] (normalized by max possible)
+// ═══════════════════════════════════════════════════════════
+function fbm(perm, x, y, harmonics, spread, gain, period) {
+  let value   = 0;
+  let freq    = 1.0 / period;
+  let amp     = 1.0;
+  let maxAmp  = 0;
+
+  for (let i = 0; i < harmonics; i++) {
+    value  += simplex2(perm, x * freq, y * freq) * amp;
+    maxAmp += amp;
+    freq   *= spread;
+    amp    *= gain;
+  }
+
+  return value / maxAmp; // normalized [-1, 1]
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Transfer function — maps fBm [-1,1] → pixel brightness [0,1]
+//  Matches Houdini: amplitude → offset → exponent
+// ═══════════════════════════════════════════════════════════
+function transfer(v, amplitude, offset, exponent) {
+  // 1. Apply amplitude (contrast stretch around 0)
+  v *= amplitude;
+  // 2. Shift by offset, then map to [0, 1]
+  v = (v + 1) * 0.5 + offset;
+  v = Math.max(0, Math.min(1, v));
+  // 3. Exponent sharpens/softens the transitions
+  v = Math.pow(v, exponent);
+  return v;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════
+let dataURL = '';
+
+function getParams() {
+  return {
+    seed:      parseInt(document.getElementById('seed-sl').value),
+    period:    parseFloat(document.getElementById('period').value),
+    harmonics: parseInt(document.getElementById('harmonics').value),
+    spread:    parseFloat(document.getElementById('h-spread').value),
+    gain:      parseFloat(document.getElementById('h-gain').value),
+    exponent:  parseFloat(document.getElementById('exponent').value),
+    amplitude: parseFloat(document.getElementById('amplitude').value),
+    offset:    parseFloat(document.getElementById('offset').value),
+    od:        parseFloat(document.getElementById('od').value),
+    blend:     document.getElementById('blend').value,
+    tile:      parseInt(document.getElementById('tile').value),
+    size:      parseInt(document.getElementById('tex-size').value),
+  };
+}
+
+function render() {
+  const p = getParams();
+  const t0 = performance.now();
+  const note = document.getElementById('perf-note');
+  note.textContent = 'Generating…';
+
+  // defer so the "Generating…" text paints before the heavy loop
+  requestAnimationFrame(() => {
+    const perm = buildPerm(p.seed);
+    const { size, harmonics, spread, gain, period, amplitude, offset, exponent } = p;
+
+    // Main output canvas
+    const outCanvas  = document.getElementById('grain-canvas');
+    outCanvas.width  = size;
+    outCanvas.height = size;
+    outCanvas.style.width  = Math.min(size, 256) + 'px';
+    outCanvas.style.height = Math.min(size, 256) + 'px';
+    const outCtx  = outCanvas.getContext('2d');
+    const outImg  = outCtx.createImageData(size, size);
+
+    // Debug canvas — raw fBm before transfer
+    const dbgCanvas  = document.getElementById('debug-canvas');
+    dbgCanvas.width  = size;
+    dbgCanvas.height = size;
+    dbgCanvas.style.width  = Math.min(size, 256) + 'px';
+    dbgCanvas.style.height = Math.min(size, 256) + 'px';
+    const dbgCtx  = dbgCanvas.getContext('2d');
+    const dbgImg  = dbgCtx.createImageData(size, size);
+
+    for (let py = 0; py < size; py++) {
+      for (let px = 0; px < size; px++) {
+        const x = px / size;
+        const y = py / size;
+
+        const raw = fbm(perm, x, y, harmonics, spread, gain, period);
+        const out = transfer(raw, amplitude, offset, exponent);
+
+        const idx = (py * size + px) * 4;
+        const oByte = (out * 255) | 0;
+        outImg.data[idx]   = oByte;
+        outImg.data[idx+1] = oByte;
+        outImg.data[idx+2] = oByte;
+        outImg.data[idx+3] = 255;
+
+        // debug: map raw [-1,1] → [0,255]
+        const dByte = ((raw + 1) * 0.5 * 255) | 0;
+        dbgImg.data[idx]   = dByte;
+        dbgImg.data[idx+1] = dByte;
+        dbgImg.data[idx+2] = dByte;
+        dbgImg.data[idx+3] = 255;
+      }
+    }
+
+    outCtx.putImageData(outImg, 0, 0);
+    dbgCtx.putImageData(dbgImg, 0, 0);
+    dataURL = outCanvas.toDataURL('image/png');
+
+    // update card previews
+    renderCards(p);
+
+    const ms = (performance.now() - t0).toFixed(0);
+    note.textContent = `Generated ${size}×${size} in ${ms}ms`;
+  });
+}
+
+// ── Card preview helpers ─────────────────────────────────
+const CARD_TYPES = [
+  { label: 'Common',    cls: 'common' },
+  { label: 'Uncommon',  cls: 'uncommon' },
+  { label: 'Rare',      cls: 'rare' },
+  { label: 'Legendary', cls: 'legendary' },
+];
+
+const BLENDS = ['multiply','screen','overlay','soft-light','hard-light','color-dodge','luminosity'];
+
+function makeCard(cls, url, blend, opacity, tile) {
+  const card = document.createElement('div');
+  card.className = `card ${cls}`;
+  card.innerHTML = `
+    <div class="card-hdr"><span>Player Name</span><span>80 HP</span></div>
+    <div class="card-img"></div>
+    <div class="card-body"></div>
+    <div class="card-footer"><span>Common</span><span>#001</span></div>
+  `;
+  const gl = document.createElement('div');
+  gl.className = 'grain-layer';
+  gl.style.backgroundImage  = `url(${url})`;
+  gl.style.backgroundSize   = `${tile}px ${tile}px`;
+  gl.style.mixBlendMode     = blend;
+  gl.style.opacity          = opacity;
+  card.appendChild(gl);
+  return card;
+}
+
+function renderCards(p) {
+  // main row
+  const row = document.getElementById('main-cards');
+  row.innerHTML = '';
+  CARD_TYPES.forEach(({ label, cls }) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    const lbl = document.createElement('span');
+    lbl.textContent = label;
+    wrap.appendChild(makeCard(cls, dataURL, p.blend, p.od, p.tile));
+    wrap.appendChild(lbl);
+    row.appendChild(wrap);
+  });
+
+  // blend grid
+  const grid = document.getElementById('blend-grid');
+  grid.innerHTML = '';
+  BLENDS.forEach(blend => {
+    const cell = document.createElement('div');
+    cell.className = 'blend-cell';
+    cell.appendChild(makeCard('common', dataURL, blend, p.od, p.tile));
+    const lbl = document.createElement('span');
+    lbl.textContent = blend;
+    cell.appendChild(lbl);
+    grid.appendChild(cell);
+  });
+}
+
+// ── Wire controls ────────────────────────────────────────
+function bindSlider(id, valId, fmt) {
+  const el = document.getElementById(id);
+  const dv = document.getElementById(valId);
+  const update = () => {
+    dv.textContent = fmt ? fmt(el.value) : el.value;
+    render();
+  };
+  el.addEventListener('input', update);
+}
+
+bindSlider('seed-sl',   'seed-val');
+bindSlider('period',    'period-val',    v => parseFloat(v).toFixed(1));
+bindSlider('harmonics', 'harmonics-val');
+bindSlider('h-spread',  'h-spread-val',  v => parseFloat(v).toFixed(2));
+bindSlider('h-gain',    'h-gain-val',    v => parseFloat(v).toFixed(2));
+bindSlider('exponent',  'exponent-val',  v => parseFloat(v).toFixed(2));
+bindSlider('amplitude', 'amplitude-val', v => parseFloat(v).toFixed(2));
+bindSlider('offset',    'offset-val',    v => parseFloat(v).toFixed(3));
+bindSlider('od',        'od-val',        v => parseFloat(v).toFixed(2));
+bindSlider('tile',      'tile-val',      v => v + 'px');
+
+['blend', 'tex-size'].forEach(id => {
+  document.getElementById(id).addEventListener('change', render);
+});
+
+document.getElementById('btn-regen').addEventListener('click', () => {
+  const sl = document.getElementById('seed-sl');
+  sl.value = Math.floor(Math.random() * 9999);
+  document.getElementById('seed-val').textContent = sl.value;
+  render();
+});
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = 'grain.png';
+  a.click();
+});
+
+// initial render with Houdini defaults from the screenshot
+render();
+</script>
+</body>
+</html>

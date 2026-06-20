@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Nav from './components/Nav';
 import Toast from './components/Toast';
 import AuthModal from './components/AuthModal';
+import GuestUsernameModal from './components/GuestUsernameModal';
 import CreateView from './views/CreateView';
 import CollectionView from './views/CollectionView';
 import PacksView from './views/PacksView';
@@ -9,12 +10,14 @@ import TradesView from './views/TradesView';
 import { useAuth } from './hooks/useAuth';
 import { useCards } from './hooks/useCards';
 import { useDeviceId } from './hooks/useDeviceId';
+import { useGuestUsername } from './hooks/useGuestUsername';
 import { fetchSharedPack } from './utils/share';
 
 export default function App() {
   const auth = useAuth();
   const { user, profile, signOut } = auth;
   const deviceId = useDeviceId();
+  const { handle: guestHandle, saveHandle } = useGuestUsername();
 
   // Pass userId to useCards when signed in so cards load from user account
   const userId = user?.id ?? null;
@@ -63,6 +66,15 @@ export default function App() {
   // user === undefined means auth is still resolving session (don't flash login UI)
   const authResolved = user !== undefined;
 
+  // Effective display name: signed-in profile username, or guest handle
+  const displayName = profile?.username ?? guestHandle ?? null;
+
+  // Block the app until we have *some* username — either Supabase profile or guest handle.
+  // While auth is resolving (user===undefined) we wait silently.
+  // Once resolved: signed-in users without a profile get AuthModal (username step);
+  // signed-out users without a guest handle get GuestUsernameModal.
+  const needsUsername = authResolved && displayName === null && !showAuth;
+
   return (
     <>
       <div className="app">
@@ -71,6 +83,7 @@ export default function App() {
           onViewChange={setActiveView}
           user={authResolved ? user : undefined}
           profile={profile}
+          displayName={displayName}
           onSignIn={() => setShowAuth(true)}
           onSignOut={handleSignOut}
         />
@@ -110,6 +123,14 @@ export default function App() {
           removeCard={removeCard}
         />
       </div>
+
+      {/* Guest username gate — shown to signed-out users with no handle yet */}
+      {needsUsername && !user && (
+        <GuestUsernameModal
+          onSave={saveHandle}
+          onSignIn={() => setShowAuth(true)}
+        />
+      )}
 
       {showAuth && (
         <AuthModal

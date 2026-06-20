@@ -2672,6 +2672,16 @@ body::before {
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 #1a1a1a;
 }
+/* Guest avatar — grey instead of red to signal "no account" */
+.user-avatar-guest { background: #888; }
+
+/* Guest username modal logo */
+.guest-modal-logo {
+  height: 72px;
+  width: auto;
+  display: block;
+  margin: 0 auto 8px;
+}
 
 .user-dropdown {
   position: absolute;
