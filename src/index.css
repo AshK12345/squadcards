@@ -2577,6 +2577,26 @@ body::before {
 }
 .crop-actions .btn { flex: 1; justify-content: center; }
 
+/* ─── AUTH LOADING SCREEN ─── */
+.auth-loading {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #ffffff, #f8f5f0);
+}
+.auth-loading-logo {
+  font-family: 'Nerko One', cursive;
+  font-size: 36px;
+  color: #1a1a1a;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.auth-loading-logo span { color: #ff3b3b; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
 /* ─── AUTH MODAL ─── */
 .auth-tabs {
   display: flex;

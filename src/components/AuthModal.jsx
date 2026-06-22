@@ -103,11 +103,16 @@ export default function AuthModal({ onClose, auth, deviceId }) {
     onClose();
   };
 
+  // onClose === null means this modal is a hard gate (can't be dismissed)
+  const dismissible = !!onClose;
+
   const handleOverlayClick = (e) => {
+    if (!dismissible) return;
     if (e.target === e.currentTarget && step === 'auth') onClose();
   };
 
   const handleClose = () => {
+    if (!dismissible) return;
     if (step === 'auth' || step === 'verify-email') { onClose(); return; }
     auth.signOut().then(onClose);
   };
@@ -116,7 +121,7 @@ export default function AuthModal({ onClose, auth, deviceId }) {
   return (
     <div className="modal-overlay visible" onClick={handleOverlayClick}>
       <div className="modal">
-        <div className="modal-close" onClick={handleClose}>✕</div>
+        {dismissible && <div className="modal-close" onClick={handleClose}>✕</div>}
 
         {/* ── AUTH (sign in / sign up tabs) ── */}
         {step === 'auth' && (

@@ -10,37 +10,8 @@ export default function UserMenu({ user, profile, displayName: guestDisplay, onS
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Guest (no account) but has a handle
-  if (!user && guestDisplay) {
-    return (
-      <div className="user-menu" ref={ref}>
-        <button
-          className="user-avatar user-avatar-guest"
-          onClick={() => setOpen(o => !o)}
-          type="button"
-          aria-label="Account menu"
-        >
-          {guestDisplay[0].toUpperCase()}
-        </button>
-        {open && (
-          <div className="user-dropdown">
-            <div className="user-dropdown-name">@{guestDisplay} <span style={{fontSize:10,color:'#aaa'}}>(guest)</span></div>
-            <button className="user-dropdown-item" onClick={() => { setOpen(false); onSignIn(); }} type="button">
-              Create Account
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <button className="btn btn-signin" onClick={onSignIn} type="button">
-        Sign In
-      </button>
-    );
-  }
+  // Signed out — should only happen if onSignIn is provided (not the auth wall)
+  if (!user) return null;
 
   const initials = profile?.username
     ? profile.username[0].toUpperCase()
