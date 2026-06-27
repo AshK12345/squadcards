@@ -66,13 +66,25 @@ export default function AuthModal({ onClose, auth, deviceId }) {
     const { error, needsConfirmation } = await signUp(suEmail.trim(), suPass);
     setSuBusy(false);
     if (error) {
-      const msg = error.message || '';
-      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('email rate')) {
-        setSuErr('Email rate limit hit — go to Supabase → Authentication → Providers → Email and turn off "Confirm email", then try again.');
-      } else if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already been registered')) {
-        setSuErr('An account with that email already exists. Try signing in instead.');
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('rate limit') || msg.includes('email rate') || msg.includes('over_email_send_rate_limit')) {
+        setSuErr('Too many attempts — wait a few minutes and try again, or turn off "Confirm email" in Supabase.');
+      } else if (
+        msg.includes('already registered') ||
+        msg.includes('already been registered') ||
+        msg.includes('already exists') ||
+        msg.includes('email taken') ||
+        msg.includes('user already') ||
+        msg.includes('duplicate') ||
+        error.status === 422
+      ) {
+        setSuErr('An account with that email already exists — try signing in instead.');
+        // Auto-switch to sign-in tab and prefill the email
+        setTab('signin');
+        setSiLogin(suEmail.trim());
+        setStep('auth');
       } else {
-        setSuErr(msg || 'Sign up failed.');
+        setSuErr((error.message) || 'Sign up failed.');
       }
     } else if (needsConfirmation) {
       // Email confirmation is ON in Supabase — user must click the link first

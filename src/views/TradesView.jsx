@@ -12,9 +12,11 @@ import { SUPABASE_ENABLED } from '../lib/supabase';
 import { HP_MAP, DEFAULT_STATS } from '../constants';
 
 // ── Brainrot theme pool ──────────────────────────────────────────────────────
-// Base list — updated June 2026. Background refresh keeps it current automatically.
-const BRAINROT_THEMES_BASE = [
-  // Classic brainrot
+// Entries appear multiple times to weight era probability:
+//   2026 (Italian brainrot + late 2025/2026) → ~2× weight
+//   2025 → ~1.5× weight
+//   2024 and earlier classics → 1× weight
+const _BR_2024 = [
   'skibidi toilet final boss', 'sigma grindset emperor', 'NPC streamer going viral',
   'fanum tax collector agent', 'gyatt apostle awakened', 'rizz lord anointed',
   'delulu princess manifesting', 'ratio machine activated', 'ohio final boss unlocked',
@@ -25,17 +27,32 @@ const BRAINROT_THEMES_BASE = [
   'brain worm manifestation IRL', 'edgelord final evolution', "it's giving creature",
   'bus riding philosopher king', 'gym bro enlightened form', 'minecraft creeper IRL',
   'sussy baka energy type', 'W rizz god mode', 'delulu to real life pipeline',
-  // 2025-2026 additions
+];
+const _BR_2025 = [
   'chill guy energy descended', 'glazing machine activated', 'gooning lord awakened',
   'yapping apostle unlocked', 'villain arc speedrunner', 'caught in 4K supremacy',
   'aura farming level 100', 'rent free in your head', 'fatherless behavior detected',
   'rizz demon no printer', 'based NPC philosopher', 'certified ohio moment IRL',
   'brain rot speedrunner type', 'no cap prophet ascended', 'certified glazer devotee',
-  // Italian brainrot characters
+];
+const _BR_2026 = [
+  // Italian brainrot
   'tralalero tralala shark energy', 'bombardiro crocodilo air strike', 'cappuccino assassino vibes',
   'tung tung sahur drumming chaos', 'brr brr patapim creature', 'la vaca saturno saturnita',
   'frigo camelo frozen wanderer', 'ballerina cappuccina energy', 'burbaloni luliloli entity',
   'glorbo frutiger anomaly', 'chimpanzee in tuxedo energy', 'crocodillo alligatore rising',
+  // Late 2025 / 2026 trends
+  'hawk tuah energy evolved', 'demure mindset activated', 'brat summer survivor',
+  'very demure very mindful', 'plant-based sigma grindset', 'looksmaxxing final form',
+  'mob mentality speedrunner', 'academic weapon mode on', 'delulu pipeline activated',
+  'hyperpop goblin ascended', 'main character arc ending',
+];
+
+// Build weighted pool: 2026 × 2, 2025 × 1.5 (add half again), 2024 × 1
+const BRAINROT_THEMES_BASE = [
+  ..._BR_2024,
+  ..._BR_2025, ..._BR_2025.slice(0, Math.ceil(_BR_2025.length / 2)),   // ×1.5
+  ..._BR_2026, ..._BR_2026,                                              // ×2
 ];
 
 const BRAINROT_LS_KEY    = 'sc-brainrot-recent';
@@ -131,19 +148,45 @@ function randomAIRarity() {
   return r < 0.65 ? 'common' : r < 0.90 ? 'uncommon' : 'rare';
 }
 
-// Generate an image URL via Pollinations.ai (free, no API key).
-// Returns the URL directly — the <img> tag loads it natively, no fetch/blob
-// conversion needed. This avoids CORS failures, rate-limit timeouts, and the
-// dark-purple fallback canvas that was causing every card to look the same.
-function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
+// Build a Pollinations image URL
+function buildImageUrl(name, type, emoji = '🤖', brainrotTheme = '') {
   const artStyle  = pickArtStyle();
   const character = maybePickCharacter();
   const themeNote = brainrotTheme ? `, ${brainrotTheme} energy` : '';
-  // Keep character note short to avoid excessively long URLs
   const charNote  = character ? `, as ${character.name} (${character.desc})` : '';
   const prompt    = `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${charNote}${themeNote}, colorful expressive portrait, no text, no words`;
   const seed      = Math.floor(Math.random() * 999999);
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true&seed=${seed}`;
+}
+
+// Emoji fallback canvas — used when Pollinations fails or times out
+function emojiFallback(emoji = '🤖') {
+  const S = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, S, S);
+  g.addColorStop(0, '#1a1a2e'); g.addColorStop(1, '#16213e');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+  ctx.font = `${S * 0.46}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, S / 2, S / 2);
+  return canvas.toDataURL('image/jpeg', 0.88);
+}
+
+// Preload the Pollinations URL before the animation starts.
+// If it fails or times out (8s), fall back to the emoji canvas data-URL.
+// This ensures every trade shows *something* and eliminates the "null image"
+// on second+ trades caused by Pollinations rate-limiting subsequent requests.
+async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
+  const url = buildImageUrl(name, type, emoji, brainrotTheme);
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => { img.src = ''; resolve(emojiFallback(emoji)); }, 8000);
+    img.onload  = () => { clearTimeout(timer); resolve(url); };
+    img.onerror = () => { clearTimeout(timer); resolve(emojiFallback(emoji)); };
+    img.src = url;
+  });
 }
 const clampAI = (v, mn, mx) => Math.min(mx, Math.max(mn, Math.round(Number(v) || 0)));
 
@@ -338,7 +381,7 @@ export default function TradesView({
     try {
       const aiData        = await generateAIOpponentCard();
       const brainrotTheme = pickBrainrotTheme();
-      const photo         = generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
+      const photo         = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
       // Rarity assigned randomly — never derived from the traded card's rarity
       const aiRarity = randomAIRarity();
       const aiCardData = {
