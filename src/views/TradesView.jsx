@@ -4,7 +4,7 @@ import {
   setReady, executeTrade, claimCard, cancelLobby,
   fetchTrade, subscribeTrade,
 } from '../utils/trade';
-import { generateAIOpponentCard, refreshBrainrotPool } from '../utils/ai';
+import { generateAIOpponentCard, refreshBrainrotPool, wordTrunc } from '../utils/ai';
 import { saveTradePartner } from '../utils/aiMemory';
 import CardFrame from '../components/CardFrame';
 import TradeAnimation from '../components/TradeAnimation';
@@ -385,10 +385,10 @@ export default function TradesView({
       // Rarity assigned randomly — never derived from the traded card's rarity
       const aiRarity = randomAIRarity();
       const aiCardData = {
-        name:   (aiData.name   || 'Glitch Entity').slice(0, 22),
-        type:   (aiData.type   || 'unhinged · no cap · void spawn').slice(0, 42),
+        name:   wordTrunc(aiData.name   || 'Glitch Entity',  18),
+        type:   wordTrunc(aiData.type   || 'unhinged goblin mode', 28),
         rarity: aiRarity,
-        flavor: (aiData.flavor || 'Spawned from corrupted data. Smells like burned WiFi.').slice(0, 85),
+        flavor: wordTrunc(aiData.flavor || 'Spawned from corrupted data. Smells like WiFi.', 72),
         photo,
         stats: DEFAULT_STATS.map(s => ({
           ...s,

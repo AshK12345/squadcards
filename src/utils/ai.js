@@ -206,20 +206,31 @@ function pickArchetype() {
   return AI_CARD_ARCHETYPES[_aiArchetypeIdx];
 }
 
+/**
+ * Truncate a string at a word boundary so it fits within maxChars.
+ * Falls back to hard slice only if a single word exceeds the limit.
+ */
+export function wordTrunc(str, maxChars) {
+  if (!str) return '';
+  if (str.length <= maxChars) return str;
+  const cut = str.slice(0, maxChars);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > maxChars * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd();
+}
+
 export async function generateAIOpponentCard() {
   const archetype = pickArchetype();
   const prompt = `Generate a trading card character who is: ${archetype}.
 
 Output EXACTLY this JSON and nothing else — no markdown, no preamble:
-{"name":"2-4 word character name","type":"short noun label","flavor":"1-2 sentence flavor under 25 words","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"3-4 expressive emojis"}
+{"name":"character name","type":"noun label","flavor":"flavor text","rizz":0,"aura":0,"clout":0,"chuddness":0,"emoji":"emojis"}
 
-Rules:
-- name: specific to this archetype, NOT generic. Avoid "Grimace", "Skibidi", "Rizz Lord" as standalone names — be creative and specific to the archetype
-- type: 2-4 words MAX, noun-forward — like "NPC sigma overlord", "chaos goblin lord", "delulu manifestor", "ratio machine activated"
-- rizz and aura: range -999 to 999, use wild extremes appropriate to this character
-- clout and chuddness: range 0 to 999, use wild extremes
-- emoji: 3-4 emojis that fit THIS specific character (not generic fire/skull)
-- flavor: lean into the specific archetype, make it funny and specific`;
+Hard limits — COUNT THE CHARACTERS before outputting:
+- name: MAX 18 characters total (2-3 words). Specific to archetype, not generic.
+- type: MAX 28 characters total (2-4 words, noun-forward). Like "NPC sigma overlord", "chaos goblin lord", "delulu manifestor".
+- flavor: MAX 72 characters total (1 punchy sentence). Make it funny and specific to the archetype.
+- emoji: 2-3 emojis that fit this character
+- rizz/aura: -999 to 999, use wild extremes. clout/chuddness: 0 to 999, use wild extremes.`;
   const text = await callClaude(prompt, 400);
   const cleaned = text.replace(/```json|```/g, '').replace(/[\u2212\u2013\u2014]/g, '-').trim();
   try {
