@@ -148,18 +148,40 @@ function randomAIRarity() {
   return r < 0.65 ? 'common' : r < 0.90 ? 'uncommon' : 'rare';
 }
 
-// Return a Pollinations URL directly — let the browser load and cache it.
-// Preloading was causing Pollinations rate-limit errors to trigger the emoji
-// fallback canvas (dark blue) on every trade after the first. The browser
-// handles retries and caching better than a manual preload.
-function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
+// Generate a card image via Pollinations.
+// In production: calls /api/image (Vercel serverless) so the fetch comes from
+// Vercel's IPs — avoids the browser-side rate limiting that was causing every
+// trade after the first to return a dark-blue fallback.
+// In local dev (VITE_ANTHROPIC_API_KEY set): hits Pollinations directly since
+// rate limiting is less aggressive in dev sessions.
+async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
   const artStyle  = pickArtStyle();
   const character = maybePickCharacter();
   const themeNote = brainrotTheme ? `, ${brainrotTheme} energy` : '';
   const charNote  = character ? `, as ${character.name} (${character.desc})` : '';
   const prompt    = `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${charNote}${themeNote}, colorful expressive portrait, no text, no words`;
   const seed      = Math.floor(Math.random() * 999999);
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true&seed=${seed}`;
+
+  const isLocalDev = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
+
+  if (!isLocalDev) {
+    // Production: proxy through Vercel to avoid browser rate-limiting
+    try {
+      const resp = await fetch('/api/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, seed }),
+        signal: AbortSignal.timeout(45000),
+      });
+      if (resp.ok) {
+        const { dataUrl } = await resp.json();
+        if (dataUrl) return dataUrl;
+      }
+    } catch { /* fall through to direct URL */ }
+  }
+
+  // Local dev fallback (or if proxy failed): return the URL directly
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true&seed=${seed}&model=flux`;
 }
 const clampAI = (v, mn, mx) => Math.min(mx, Math.max(mn, Math.round(Number(v) || 0)));
 
@@ -354,7 +376,7 @@ export default function TradesView({
     try {
       const aiData        = await generateAIOpponentCard();
       const brainrotTheme = pickBrainrotTheme();
-      const photo         = generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
+      const photo         = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
       // Rarity assigned randomly — never derived from the traded card's rarity
       const aiRarity = randomAIRarity();
       const aiCardData = {
