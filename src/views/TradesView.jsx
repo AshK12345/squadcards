@@ -148,8 +148,11 @@ function randomAIRarity() {
   return r < 0.65 ? 'common' : r < 0.90 ? 'uncommon' : 'rare';
 }
 
-// Build a Pollinations image URL
-function buildImageUrl(name, type, emoji = '🤖', brainrotTheme = '') {
+// Return a Pollinations URL directly — let the browser load and cache it.
+// Preloading was causing Pollinations rate-limit errors to trigger the emoji
+// fallback canvas (dark blue) on every trade after the first. The browser
+// handles retries and caching better than a manual preload.
+function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
   const artStyle  = pickArtStyle();
   const character = maybePickCharacter();
   const themeNote = brainrotTheme ? `, ${brainrotTheme} energy` : '';
@@ -157,36 +160,6 @@ function buildImageUrl(name, type, emoji = '🤖', brainrotTheme = '') {
   const prompt    = `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${charNote}${themeNote}, colorful expressive portrait, no text, no words`;
   const seed      = Math.floor(Math.random() * 999999);
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true&seed=${seed}`;
-}
-
-// Emoji fallback canvas — used when Pollinations fails or times out
-function emojiFallback(emoji = '🤖') {
-  const S = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = S;
-  const ctx = canvas.getContext('2d');
-  const g = ctx.createLinearGradient(0, 0, S, S);
-  g.addColorStop(0, '#1a1a2e'); g.addColorStop(1, '#16213e');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
-  ctx.font = `${S * 0.46}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(emoji, S / 2, S / 2);
-  return canvas.toDataURL('image/jpeg', 0.88);
-}
-
-// Preload the Pollinations URL before the animation starts.
-// If it fails or times out (8s), fall back to the emoji canvas data-URL.
-// This ensures every trade shows *something* and eliminates the "null image"
-// on second+ trades caused by Pollinations rate-limiting subsequent requests.
-async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
-  const url = buildImageUrl(name, type, emoji, brainrotTheme);
-  return new Promise((resolve) => {
-    const img = new Image();
-    const timer = setTimeout(() => { img.src = ''; resolve(emojiFallback(emoji)); }, 8000);
-    img.onload  = () => { clearTimeout(timer); resolve(url); };
-    img.onerror = () => { clearTimeout(timer); resolve(emojiFallback(emoji)); };
-    img.src = url;
-  });
 }
 const clampAI = (v, mn, mx) => Math.min(mx, Math.max(mn, Math.round(Number(v) || 0)));
 
@@ -381,7 +354,7 @@ export default function TradesView({
     try {
       const aiData        = await generateAIOpponentCard();
       const brainrotTheme = pickBrainrotTheme();
-      const photo         = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
+      const photo         = generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
       // Rarity assigned randomly — never derived from the traded card's rarity
       const aiRarity = randomAIRarity();
       const aiCardData = {
@@ -390,6 +363,7 @@ export default function TradesView({
         rarity: aiRarity,
         flavor: wordTrunc(aiData.flavor || 'Spawned from corrupted data. Smells like WiFi.', 72),
         photo,
+        emoji:  aiData.emoji || '🤖',
         stats: DEFAULT_STATS.map(s => ({
           ...s,
           val: clampAI(aiData[s.key], s.bipolar ? -999 : 0, 999),

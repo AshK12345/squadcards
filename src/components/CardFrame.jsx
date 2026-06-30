@@ -330,10 +330,18 @@ export default function CardFrame({ card, index, noTilt = false, editImg = false
                   touchAction: editImg ? 'none' : undefined,
                 }}
                 draggable={false}
-                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                onError={e => {
+                  // Hide broken img and show the placeholder — but keep the
+                  // wrapper visible so the card still has its image area
+                  e.currentTarget.style.display = 'none';
+                  const placeholder = e.currentTarget.parentElement?.querySelector('.card-img-placeholder');
+                  if (placeholder) placeholder.style.display = 'flex';
+                }}
               />
             : null}
-          <div className="card-img-placeholder" style={card.photo ? { display: 'none' } : {}}>👤</div>
+          <div className="card-img-placeholder" style={card.photo ? { display: 'none' } : {}}>
+            {card.emoji || '👤'}
+          </div>
           {editImg && card.photo && (
             <div className="card-img-edit-hint">✋ drag · scroll to zoom</div>
           )}
