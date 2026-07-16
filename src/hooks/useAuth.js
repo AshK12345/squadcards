@@ -15,7 +15,10 @@ export function useAuth() {
   useEffect(() => {
     if (!SUPABASE_ENABLED) { setUser(null); return; }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const timeout = new Promise(resolve =>
+      setTimeout(() => resolve({ data: { session: null } }), 6000)
+    );
+    Promise.race([supabase.auth.getSession(), timeout]).then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) loadProfile(u.id);

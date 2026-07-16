@@ -84,61 +84,201 @@ function pickBrainrotTheme() {
   return picked;
 }
 
-// ── Art style pool ───────────────────────────────────────────────────────────
-const ART_STYLES = [
-  // ── 2D illustrated ──
+// ── Known brainrot characters ─────────────────────────────────────────────────
+// Each entry has:
+//   desc        — visual description for the image model
+//   nativeStyle — the character's canonical art style
+//   subversiveStyle — a contrasting style that's funny because of the clash
+//   subversiveWeight — 0-1: how often the subversive style wins (higher = more often)
+const KNOWN_BRAINROT_CHARS = [
+  // Italian brainrot (native: chunky 3D CGI — subverting to 2D is funny)
+  {
+    name: 'Tralalero Tralala',
+    desc: 'great white shark in Adidas sneakers walking upright on two legs',
+    nativeStyle: 'chunky Italian brainrot 3D CGI, glossy cartoon render, vibrant beach colors',
+    subversiveStyle: 'hand-drawn anime cel-shaded 2D, soft pastel watercolor, earnest and sincere',
+    subversiveWeight: 0.45,
+  },
+  {
+    name: 'Bombardiro Crocodilo',
+    desc: 'green crocodile with WWII bomber plane fused to its body, propeller wings instead of arms',
+    nativeStyle: 'Italian brainrot 3D CGI, military olive-green, dramatic sky background',
+    subversiveStyle: 'adorable chibi 2D kawaii, pastel pink and soft blue, tiny cute proportions',
+    subversiveWeight: 0.55,
+  },
+  {
+    name: 'Cappuccino Assassino',
+    desc: 'giant sentient cappuccino cup with a blade, shadowy assassin energy, steam rising',
+    nativeStyle: 'Italian brainrot 3D CGI, warm espresso tones, shadowy dramatic lighting',
+    subversiveStyle: 'cheerful flat corporate icon style, minimal clean vector art, friendly pastel colors',
+    subversiveWeight: 0.6,
+  },
+  {
+    name: 'Tung Tung Sahur',
+    desc: 'chaotic wooden stick-figure humanoid drumming on everything around it',
+    nativeStyle: 'Italian brainrot 3D CGI, rough wooden texture, percussive frantic energy, warm tones',
+    subversiveStyle: 'traditional ukiyo-e woodblock print, flat Japanese print style, serene and dignified',
+    subversiveWeight: 0.5,
+  },
+  {
+    name: 'Brr Brr Patapim',
+    desc: 'tiny blue fuzzy gremlin with huge googly eyes patting random things',
+    nativeStyle: 'Italian brainrot 3D CGI, soft fuzzy blue texture, huge expressive googly eyes',
+    subversiveStyle: 'hyperrealistic digital painting, photorealistic fur and skin detail, deeply uncanny',
+    subversiveWeight: 0.5,
+  },
+  {
+    name: 'La Vaca Saturno',
+    desc: 'cow wearing Saturn\'s planetary rings as a glowing halo crown, cosmic background',
+    nativeStyle: 'Italian brainrot 3D CGI, deep space background, glowing ring halo, surreal farm vibes',
+    subversiveStyle: 'classical Renaissance oil painting, golden divine light, religious iconography energy',
+    subversiveWeight: 0.65,
+  },
+  {
+    name: 'Frigo Camelo',
+    desc: 'dromedary camel with a refrigerator as its torso, fridge door swinging open, desert background',
+    nativeStyle: 'Italian brainrot 3D CGI, chrome fridge texture, bright desert landscape',
+    subversiveStyle: 'children\'s picture-book illustration, soft crayon texture, cheerful and wholesome',
+    subversiveWeight: 0.5,
+  },
+  {
+    name: 'Ballerina Cappuccina',
+    desc: 'ballerina dancer whose upper body is a cappuccino cup, tutu and steam rising elegantly',
+    nativeStyle: 'Italian brainrot 3D CGI, graceful dance pose, warm café lighting, steam wisps',
+    subversiveStyle: 'elegant Art Nouveau illustration, Alphonse Mucha decorative borders, refined and ornate',
+    subversiveWeight: 0.55,
+  },
+  {
+    name: 'Lirili Larila',
+    desc: 'majestic camel-elephant hybrid standing on a mountain peak, heroic pose',
+    nativeStyle: 'Italian brainrot 3D CGI, epic mountain sunrise, majestic golden lighting',
+    subversiveStyle: 'flat Bauhaus minimalist poster, geometric shapes only, primary colors, no detail',
+    subversiveWeight: 0.5,
+  },
+  {
+    name: 'Chimpanzeeni Bananini',
+    desc: 'chimpanzee wearing a full banana peel suit doing parkour across buildings',
+    nativeStyle: 'Italian brainrot 3D CGI, bright yellow banana texture, dynamic action freeze-frame',
+    subversiveStyle: 'serious National Geographic style, photorealistic nature documentary, dignified and solemn',
+    subversiveWeight: 0.65,
+  },
+  {
+    name: 'Burbaloni Luliloli',
+    desc: 'round translucent bubble creature with tiny limbs, floating peacefully',
+    nativeStyle: 'Italian brainrot 3D CGI, iridescent bubble material, rainbow reflections, soft glow',
+    subversiveStyle: 'dark brooding Caravaggio oil painting, dramatic chiaroscuro lighting, intense shadows',
+    subversiveWeight: 0.6,
+  },
+  {
+    name: 'Trippi Troppi',
+    desc: 'trippy colorful abstract blob with googly eyes and noodle arms, maximum visual chaos',
+    nativeStyle: 'Italian brainrot 3D CGI, psychedelic swirling colors, chaotic neon energy',
+    subversiveStyle: 'minimalist zen line art, single continuous ink line on white, calm and meditative',
+    subversiveWeight: 0.55,
+  },
+  // Western / classic brainrot
+  {
+    name: 'Skibidi Toilet',
+    desc: 'human head dramatically emerging from inside a toilet bowl, intense stare',
+    nativeStyle: 'YouTube 3D CGI animation style, slightly uncanny valley, bright bathroom tile background',
+    subversiveStyle: 'cozy children\'s book illustration, round soft shapes, cuddly and totally harmless',
+    subversiveWeight: 0.6,
+  },
+  {
+    name: 'Chill Guy',
+    desc: 'simple smiling brown dog standing with hands in jacket pockets, totally unbothered expression',
+    nativeStyle: 'simple flat 2D cartoon, minimal linework, muted cozy brown tones, relaxed energy',
+    subversiveStyle: 'hyperrealistic oil painting masterwork, dramatic museum-quality portrait lighting, painted fur detail',
+    subversiveWeight: 0.7,
+  },
+  {
+    name: 'NPC',
+    desc: 'generic low-polygon video game NPC with dead eyes, stiff posture, and a blank quest-giver expression',
+    nativeStyle: 'low-poly PS2-era 3D game graphics, flat baked textures, harsh point lighting',
+    subversiveStyle: 'ornate Baroque oil painting, rich velvet robes and gold trim, regal aristocratic portrait',
+    subversiveWeight: 0.7,
+  },
+];
+
+// ── Funny situations pool ─────────────────────────────────────────────────────
+const FUNNY_SITUATIONS = [
+  'being chased by police through a mall',
+  'stuck in line at the DMV for three hours',
+  'ordering at a McDonald\'s drive-through and causing gridlock',
+  'on a catastrophically bad first date',
+  'giving a TED talk that immediately goes off the rails',
+  'doing their taxes at 11:59pm on April 15th',
+  'working retail on Black Friday',
+  'as an Uber driver who is very lost',
+  'stuck in an elevator with a confused stranger',
+  'trying to parallel park for the seventh time',
+  'on a job interview going terribly wrong',
+  'arguing with a parking officer over a ticket',
+  'at a PTA meeting trying to blend in as a normal parent',
+  'as a substitute teacher who has completely lost control of the class',
+  'at Walmart at 3am, alone',
+  'losing at Mario Kart in last place and spiraling',
+  'trying to return something at Costco without a receipt',
+  'as a wedding DJ who just played the wrong song',
+  'trying to explain their browser history to IT support',
+  'arriving late to their own surprise party',
+  'as a food delivery driver following GPS into a lake',
+  'being voted off a reality TV show in the first episode',
+  'stuck in traffic and honking at nothing',
+  'at the gym using every machine incorrectly',
+  'discovering they locked their keys in the car',
+  'blocking an entire supermarket aisle for ten minutes',
+  'as a school principal handling something truly absurd',
+  'in a Zoom meeting with the wrong background up',
+  'going through airport security with very suspicious items',
+  'at an all-you-can-eat buffet in their final evolution',
+  'trying to use self-checkout and calling for help four times',
+  'as a Yelp reviewer leaving a one-star review for a hospital',
+  'discovering the group chat was on mute the whole time',
+  'speed-running a IKEA as if it\'s a competitive sport',
+  'as a landlord trying to fix something themselves',
+];
+
+// ── Fusion art styles (used only for 15% non-known-character cards) ───────────
+const FUSION_ART_STYLES = [
   'bold flat 2D cartoon illustration, bright colors',
   'anime cel-shaded 2D, vibrant colors, clean lines',
   'comic book halftone 2D, bold ink outlines',
   'loose watercolor 2D illustration, splashing pigment',
-  'ukiyo-e woodblock 2D, flat Japanese print style',
   'pop art bold 2D, Warhol primary colors halftone',
   'chibi kawaii 2D, exaggerated cute proportions',
   'thick-outline sticker art 2D, die-cut style',
   'Hanna-Barbera retro 2D cartoon, Saturday morning vibes',
   'graffiti spray-paint 2D, street art style',
-  // ── 3D rendered ──
   'Pixar 3D render, glossy colorful character art',
   'low poly geometric 3D, faceted crystal style',
   'claymation 3D, stop-motion clay figure style',
   'Nintendo Switch 3D game art style, toon shading',
-  'Fortnite 3D character art, chunky stylized',
   'hyper-realistic 3D digital sculpt, detailed render',
-  // ── stylised / painterly ──
   'Studio Ghibli soft painterly, warm background',
   'vaporwave retro glowing aesthetic, pink and teal',
   'synthwave neon grid 80s, electric glow',
   'cyberpunk neon noir, rain-slicked dark city',
   'dark fantasy oil painting, dramatic lighting',
-  'pencil sketch crosshatch, detailed linework',
   'glitch art corrupted scanlines, digital artifact',
-  'abstract expressionist colorful splatter',
 ];
 
-// ── Brainrot character likenesses for mashup prompts ─────────────────────────
-const BRAINROT_CHARACTERS = [
-  { name: 'Tralalero Tralala',    desc: 'great white shark wearing Adidas sneakers walking upright on two legs' },
-  { name: 'Bombardiro Crocodilo', desc: 'green crocodile fused with a WWII bomber aircraft body with wings' },
-  { name: 'Cappuccino Assassino', desc: 'giant sentient cappuccino cup wielding a blade, assassin energy' },
-  { name: 'Tung Tung Sahur',      desc: 'chaotic wooden stick-figure humanoid drumming on everything' },
-  { name: 'Brr Brr Patapim',      desc: 'tiny blue fuzzy gremlin with huge googly eyes patting random things' },
-  { name: 'La Vaca Saturno',      desc: 'cow wearing Saturn\'s planetary rings as a glowing halo crown' },
-  { name: 'Frigo Camelo',         desc: 'dromedary camel fused with a refrigerator torso, door swinging open' },
-  { name: 'Ballerina Cappuccina', desc: 'ballerina dancer whose torso is a cappuccino cup, tutu and steam' },
-  { name: 'Lirili Larila',        desc: 'majestic camel-elephant hybrid creature standing on a mountaintop' },
-  { name: 'Shimpanzini Bananini', desc: 'chimpanzee wearing a full banana peel suit doing parkour' },
-  { name: 'Burbaloni Luliloli',   desc: 'round translucent bubble creature with tiny limbs floating around' },
-  { name: 'Trippi Troppi',        desc: 'trippy colorful abstract blob with googly eyes and noodle arms' },
-];
-
-function pickArtStyle() {
-  return ART_STYLES[Math.floor(Math.random() * ART_STYLES.length)];
+// Pick native or subversive art style for a known character.
+// Subversive = more humor from the contrast; native = character is recognisable.
+function pickArtStyleForChar(char) {
+  return Math.random() < char.subversiveWeight ? char.subversiveStyle : char.nativeStyle;
 }
 
-function maybePickCharacter() {
-  // 35% chance of injecting a brainrot character mashup into the prompt
-  if (Math.random() > 0.35) return null;
-  return BRAINROT_CHARACTERS[Math.floor(Math.random() * BRAINROT_CHARACTERS.length)];
+// 85% → known brainrot character in a funny situation
+// 15% → custom fusion / archetype (existing behavior)
+function pickCardConcept() {
+  if (Math.random() < 0.85) {
+    const char = KNOWN_BRAINROT_CHARS[Math.floor(Math.random() * KNOWN_BRAINROT_CHARS.length)];
+    const situation = FUNNY_SITUATIONS[Math.floor(Math.random() * FUNNY_SITUATIONS.length)];
+    const artStyle = pickArtStyleForChar(char);
+    return { type: 'known', char, situation, artStyle };
+  }
+  return { type: 'fusion' };
 }
 
 // Assign AI card rarity randomly — never influenced by the traded card.
@@ -149,19 +289,24 @@ function randomAIRarity() {
 }
 
 // Generate a card image via Pollinations.
-// In production: calls /api/image (Vercel serverless) so the fetch comes from
-// Vercel's IPs — avoids the browser-side rate limiting that was causing every
-// trade after the first to return a dark-blue fallback.
-// In local dev (VITE_ANTHROPIC_API_KEY set): hits Pollinations directly since
-// rate limiting is less aggressive in dev sessions.
-async function generateCardImage(name, type, emoji = '🤖', brainrotTheme = '') {
-  const artStyle  = pickArtStyle();
-  const character = maybePickCharacter();
-  const themeNote = brainrotTheme ? `, ${brainrotTheme} energy` : '';
-  const charNote  = character ? `, as ${character.name} (${character.desc})` : '';
-  const prompt    = `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${charNote}${themeNote}, colorful expressive portrait, no text, no words`;
-  const seed      = Math.floor(Math.random() * 999999);
+// concept.type === 'known'  → character is depicted in the exact situation with deliberate art style
+// concept.type === 'fusion' → generic archetype card with random style
+// In production: proxied through Vercel serverless to avoid browser IP rate-limiting.
+async function generateCardImage(name, type, emoji = '🤖', concept = null, brainrotTheme = '') {
+  let prompt;
 
+  if (concept?.type === 'known') {
+    const { char, situation, artStyle } = concept;
+    // Character-first prompt — describe them precisely so the image model recognises them
+    prompt = `${artStyle}: ${char.name} — ${char.desc} — currently ${situation}. Funny expressive trading card portrait. No text, no words.`;
+  } else {
+    // Fusion / archetype mode
+    const artStyle = FUSION_ART_STYLES[Math.floor(Math.random() * FUSION_ART_STYLES.length)];
+    const themeNote = brainrotTheme ? `, ${brainrotTheme} energy` : '';
+    prompt = `${artStyle}: ${emoji} funny trading card character — ${name}, ${type}${themeNote}, colorful expressive portrait, no text, no words`;
+  }
+
+  const seed = Math.floor(Math.random() * 999999);
   const isLocalDev = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
 
   if (!isLocalDev) {
@@ -374,9 +519,11 @@ export default function TradesView({
     if (!picked) return;
     setPhase('ai-generating');
     try {
-      const aiData        = await generateAIOpponentCard();
-      const brainrotTheme = pickBrainrotTheme();
-      const photo         = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', brainrotTheme);
+      const concept       = pickCardConcept();
+      const aiData        = await generateAIOpponentCard(concept);
+      // brainrotTheme only used in fusion mode for extra prompt flavour
+      const brainrotTheme = concept.type === 'fusion' ? pickBrainrotTheme() : '';
+      const photo         = await generateCardImage(aiData.name, aiData.type, aiData.emoji || '🤖', concept, brainrotTheme);
       // Rarity assigned randomly — never derived from the traded card's rarity
       const aiRarity = randomAIRarity();
       const aiCardData = {
